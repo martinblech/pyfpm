@@ -48,3 +48,8 @@ class Case(object):
     """
     __metaclass__ = case_metacls
     def __init__(self): pass
+    def __repr__(self):
+        return '%s%s' % (self.__class__.__name__, self._case_args)
+    def __eq__(self, other):
+        return (other.__class__ == self.__class__ and 
+                other._case_args == self._case_args)
