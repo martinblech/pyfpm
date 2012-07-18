@@ -4,7 +4,7 @@ except ImportError:
     import unittest
 
 from pyfpm import pattern
-from pyfpm.caseclass import Case
+from pyfpm import Case
 
 _m = pattern.Match
 
@@ -49,10 +49,18 @@ class TestRange(unittest.TestCase):
     def test_match_range(self):
         self.assertEquals(_iof(int)*2%'x'<<(1, 2), _m({'x': (1, 2)}))
 
+    def test_not_match_scalar(self):
+        scalars = (1, 'abc', .5, 'd', lambda: None)
+        for x in scalars:
+            self.assertFalse(_r(length=0) << x)
+
     # TODO: more tests
 
 _l = pattern.ListPattern
 class TestList(unittest.TestCase):
+    def test_match_empty_list(self):
+        self.assertEquals(_l()%'x'<<[], _m({'x': []}))
+
     def test_match_single_item(self):
         self.assertEquals(_l(_eq(1)%'x')<<[1], _m({'x': 1}))
 
@@ -64,13 +72,18 @@ class TestList(unittest.TestCase):
         self.assertEquals(_l(_any()%'head', +_r()%'tail')<<(1, 2, 3),
                 _m({'head': 1, 'tail': (2, 3)}))
 
+    def test_not_match_scalar(self):
+        scalars = (1, 'abc', .5, 'd', lambda: None)
+        for x in scalars:
+            self.assertFalse(_l() << x)
+
     # TODO: more tests
 
 _c = pattern.CasePattern
 class MyCase(Case):
     def __init__(self, *args): pass
 
-class TestList(unittest.TestCase):
+class TestCasePattern(unittest.TestCase):
     def test_match_single_arg(self):
         self.assertEquals(_c(MyCase, _eq(1)%'x')<<MyCase(1), _m({'x': 1}))
 
@@ -85,6 +98,18 @@ class TestList(unittest.TestCase):
                         _m({'head': 1, 'tail': (2, 3), 'x': MyCase(1, 2, 3)}))
 
     # TODO: more tests
+
+_or = pattern.OrPattern
+class TestOr(unittest.TestCase):
+    def test_simple_or(self):
+        p = _or(_l()%'x', _l(_any()%'y'))
+        self.assertEquals(p << [], _m({'x': []}))
+        self.assertEquals(p << [1], _m({'y': 1}))
+
+    def test_bind(self):
+        p = _or(_l()%'a', _any()%'b')%'x'
+        self.assertEquals(p<<[], _m({'a': [], 'x':[]}))
+        self.assertEquals(p<<1, _m({'b': 1, 'x':1}))
 
 _ = pattern.build
 class TestPBuilder(unittest.TestCase):
@@ -124,6 +149,11 @@ class TestOperators(unittest.TestCase):
 
     def test_pos(self):
         self.assertEquals(+_(1), _(1).set_infinite())
+
+    def test_or(self):
+        self.assertEquals(_(1) | _(), _or(_(1), _()))
+        self.assertEquals(_or(_(1), _(2)) | _(3), _or(_(1), _(2), _(3)))
+        self.assertEquals(_(1) | _or(_(2), _(3)), _or(_(1), _(2), _(3)))
 
 class TestMultibind(unittest.TestCase):
     pattern = _(_()%'x', _()%'x', _()%'y')

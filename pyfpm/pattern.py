@@ -16,6 +16,7 @@ class Pattern(object):
 
     def match(self, other, ctx=None):
         if self._does_match(other):
+            # repeated code, TODO figure out something better
             if self.bound_name:
                 if ctx is None:
                     ctx = {}
@@ -25,6 +26,7 @@ class Pattern(object):
                         return None
                 except KeyError:
                     ctx[self.bound_name] = other
+            # end repeated code
             return Match(ctx)
         return None
     def __lshift__(self, other):
@@ -50,6 +52,17 @@ class Pattern(object):
         return self.set_length(RangePattern.INFINITE)
     def __pos__(self):
         return self.set_infinite()
+
+    def or_with(self, other):
+        patterns = []
+        for pattern in (self, other):
+            if isinstance(pattern, OrPattern):
+                patterns.extend(pattern.patterns)
+            else:
+                patterns.append(pattern)
+        return OrPattern(*patterns)
+    def __or__(self, other):
+        return self.or_with(other)
 
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
@@ -82,6 +95,7 @@ class InstanceOfPattern(Pattern):
 
 class RegexPattern(Pattern):
     def __init__(self, regex):
+        raise ValueError('not ready yet')
         super(RegexPattern, self).__init__()
         if not isinstance(regex, re.RegexObject):
             regex = re.compile(regex)
@@ -102,6 +116,8 @@ class RangePattern(Pattern):
         return self._length
 
     def _does_match(self, other):
+        if not hasattr(other, '__iter__'):
+            return None
         if self.pattern.bound_name:
             raise ValueError("inner pattern in a range can't be bound")
         l = self.length()
@@ -122,6 +138,8 @@ class ListPattern(Pattern):
         self.patterns = patterns
 
     def match(self, other, ctx=None):
+        if not hasattr(other, '__iter__'):
+            return None
         remaining = other
         for pattern in self.patterns:
             l = pattern.length()
@@ -143,6 +161,17 @@ class ListPattern(Pattern):
                 remaining = tuple()
         if len(remaining):
             return None
+        # repeated code, TODO figure out something better
+        if self.bound_name:
+            if ctx is None:
+                ctx = {}
+            try:
+                previous = ctx[self.bound_name]
+                if previous != other:
+                    return None
+            except KeyError:
+                ctx[self.bound_name] = other
+        # end repeated code
         return Match(ctx)
 
 class CasePattern(Pattern):
@@ -155,9 +184,52 @@ class CasePattern(Pattern):
         if not self.casecls_pattern.match(other, ctx):
             return None
         match = self.initargs_pattern.match(other._case_args, ctx)
-        if match and self.bound_name:
-            match.ctx[self.bound_name] = other
-        return match
+        if not Match:
+            return None
+        # repeated code, TODO figure out something better
+        ctx = match.ctx
+        if self.bound_name:
+            if ctx is None:
+                ctx = {}
+            try:
+                previous = ctx[self.bound_name]
+                if previous != other:
+                    return None
+            except KeyError:
+                ctx[self.bound_name] = other
+        # end repeated code
+        return Match(ctx)
+
+class OrPattern(Pattern):
+    def __init__(self, *patterns):
+        if len(patterns) < 2:
+            raise ValueError('need at least two patterns')
+        super(OrPattern, self).__init__()
+        self.patterns = patterns
+
+    def match(self, other, ctx=None):
+        for pattern in self.patterns:
+            if ctx is not None:
+                ctx_ = ctx.copy()
+            else:
+                ctx_ = None
+            match = pattern.match(other, ctx_)
+            print pattern, other, match
+            if match:
+                # repeated code, TODO figure out something better
+                ctx = match.ctx
+                if self.bound_name:
+                    if ctx is None:
+                        ctx = {}
+                    try:
+                        previous = ctx[self.bound_name]
+                        if previous != other:
+                            return None
+                    except KeyError:
+                        ctx[self.bound_name] = other
+                # end repeated code
+                return Match(ctx)
+        return None
 
 def build(*args):
     arglen = len(args)
