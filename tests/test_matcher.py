@@ -4,13 +4,13 @@ try:
 except ImportError:
     import unittest
 
-from pyfpm.matcher import DynamicMatcher, NoMatch, StaticMatcher, statichandler
+from pyfpm.matcher import Matcher, NoMatch, MatchFunction, handler
 from pyfpm.pattern import build as _
 
-class TestDynamicMatcher(unittest.TestCase):
+class TestMatcher(unittest.TestCase):
     def test_equality(self):
-        m1 = DynamicMatcher()
-        m2 = DynamicMatcher()
+        m1 = Matcher()
+        m2 = Matcher()
         self.assertEquals(m1, m2)
         f = lambda: None
         m2.register(_(), f)
@@ -19,8 +19,8 @@ class TestDynamicMatcher(unittest.TestCase):
         self.assertEquals(m1, m2)
 
     def test_decorator(self):
-        m1 = DynamicMatcher()
-        m2 = DynamicMatcher()
+        m1 = Matcher()
+        m2 = Matcher()
         f = lambda: None
         m1.register(_(), f)
         decf = m2.handler(_())(f)
@@ -28,7 +28,7 @@ class TestDynamicMatcher(unittest.TestCase):
         self.assertEquals(m1, m2)
 
     def test_emptymatcher(self):
-        matcher = DynamicMatcher()
+        matcher = Matcher()
         try:
             matcher.match(None)
             self.fail('should fail with NoMatch')
@@ -36,18 +36,18 @@ class TestDynamicMatcher(unittest.TestCase):
             pass
 
     def test_simplematch(self):
-        m = DynamicMatcher()
+        m = Matcher()
         m.register(_(), lambda: 'test')
         self.assertEquals(m(None), 'test')
 
     def test_varbind(self):
-        m = DynamicMatcher()
+        m = Matcher()
         m.register(_()%'x', lambda x: 'x=%s' % x)
         self.assertEquals(m(None), 'x=None')
         self.assertEquals(m(1), 'x=1')
 
     def test_handler_priority(self):
-        m = DynamicMatcher()
+        m = Matcher()
         m.register(_(1), lambda: 'my precious, the one')
         m.register(_(int), lambda: 'just an int')
         m.register(_(), lambda: 'just an object? whatever')
@@ -57,9 +57,9 @@ class TestDynamicMatcher(unittest.TestCase):
         self.assertEquals(m(3), 'just an int')
         self.assertEquals(m(1), 'my precious, the one')
 
-class TestStaticMatcher(unittest.TestCase):
+class TestMatchFunction(unittest.TestCase):
     def test_simplematch(self):
-        class m(StaticMatcher): pass
+        class m(MatchFunction): pass
         try:
             m(None)
             self.fail('should fail with NoMatch')
@@ -67,25 +67,32 @@ class TestStaticMatcher(unittest.TestCase):
             pass
 
     def test_varbind(self):
-        class m(StaticMatcher):
-            @statichandler(_()%'x')
+        class m(MatchFunction):
+            @handler(_()%'x')
             def any(x):
                 return 'x=%s' % x
-        self.assertEquals(m(None), m.match(None))
         self.assertEquals(m(None), 'x=None')
         self.assertEquals(m(1), 'x=1')
 
     def test_handler_priority(self):
-        class m(StaticMatcher):
-            @statichandler(_(1))
+        class m(MatchFunction):
+            @handler(_(1))
             def one(): return 'my precious, the one'
-            @statichandler(_(int))
+            @handler(_(int))
             def int(): return 'just an int'
-            @statichandler(_())
+            @handler(_())
             def any(): return 'just an object? whatever'
-            @statichandler(_(str))
+            @handler(_(str))
             def str(): return 'i wish i could find a string'
         self.assertNotEquals(m('hi'), 'i wish i could find a string')
         self.assertEquals(m(None), 'just an object? whatever')
         self.assertEquals(m(3), 'just an int')
         self.assertEquals(m(1), 'my precious, the one')
+
+    def test_extraargs(self):
+        class m(MatchFunction):
+            @handler(_()%'x')
+            def any(*args, **kwargs):
+                return (args, kwargs)
+        self.assertEquals(m(None), ((), {'x': None}))
+        self.assertEquals(m(1, 'abc', None), ((1, 'abc'), {'x': None}))

@@ -5,10 +5,9 @@ import sys
 import random
 import time
 
-from pyfpm.matcher import (DynamicMatcher as DM, StaticMatcher as SM,
-        statichandler as h)
-from pyfpm.pattern import build as _
-from pyfpm.caseclass import Case
+from pyfpm import Matcher as M, MatchFunction as MF, handler as h
+from pyfpm import build as _
+from pyfpm import Case
 
 (iterations,) = map(int, sys.argv[1:])
 
@@ -25,7 +24,7 @@ class App(Term):
         self.f = f
         self.v = v
 
-dynamic = lambda x: DM(
+dynamic = M(
         (_(1)%'x', lambda x: x),
         (_('abc')%'x', lambda x: x),
         (_(int)%'x', lambda x: x),
@@ -33,9 +32,9 @@ dynamic = lambda x: DM(
         (_(Var(_(str)%'n')), lambda n: n),
         (_(Fun(_(str)%'x', _(Term)%'b')), lambda x, b: (x, b)),
         (_(App(_(Term)%'f', _(Term)%'v')), lambda f, v: (f, v)),
-        )(x)
+        )
 
-class static(SM):
+class static(MF):
     @h(_(1)%'x')
     def one(x): return x
     @h(_('abc')%'x')

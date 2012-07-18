@@ -15,8 +15,10 @@ class case_metacls(type):
     def __new__(mcs, name, bases, dict_):
         original_init = (dict_.get('__init__', None) or
                 _lookup(bases, '__init__'))
-        if inspect.isfunction(original_init):
-            # introspection for Python __init__
+        if (hasattr(inspect, 'getargspec') and
+                hasattr(inspect, 'getcallargs') and
+                inspect.isfunction(original_init)):
+            # try introspection for Python __init__
             argnames, varargs, keywords, _ = inspect.getargspec(original_init)
             if keywords:
                 raise AttributeError(
@@ -30,7 +32,7 @@ class case_metacls(type):
                     self._case_args += callargs[varargs]
             functools.update_wrapper(__init__, original_init)
         else:
-            # no introspection for native built-in __init__
+            # no introspection (python<2.7 or non-python function)
             def __init__(self, *args, **kwargs):
                 if kwargs:
                     raise AttributeError(

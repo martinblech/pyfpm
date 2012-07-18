@@ -1,11 +1,12 @@
+#!/usr/bin/env python
 """
 Loose port of the examples at `A Tour of Scala: Case Classes <http://www.scala-lang.org/node/107>`_
 """
 from __future__ import print_function
 
-from pyfpm.matcher import DynamicMatcher as M
-from pyfpm.pattern import build as _
-from pyfpm.caseclass import Case
+from pyfpm import Matcher as M
+from pyfpm import build as _
+from pyfpm import Case
 
 class Term(Case): pass
 class Var(Term):
@@ -29,7 +30,7 @@ x = Var('x')
 print(x.name)
 
 print('-'*80)
-printTerm = lambda term: M(
+printTerm = M(
         (_(Var(_(str)%'n')), lambda n: (
             print(n, end='')
             )),
@@ -44,11 +45,11 @@ printTerm = lambda term: M(
             printTerm(v),
             print(')', end='')
             )),
-        ).match(term)
-isIdentityFun = lambda term: M(
+        )
+isIdentityFun = M(
         (_(Fun(_()%'x', Var(_()%'y'))), lambda x, y: x==y),
         (_(), lambda: False),
-        ).match(term)
+        )
 id = Fun('x', Var('x'))
 t = Fun('x', Fun('y', App(Var('x'), Var('y'))))
 printTerm(t)

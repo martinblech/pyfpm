@@ -2,21 +2,21 @@ from pyfpm import pattern
 
 class NoMatch(Exception): pass
 
-class DynamicMatcher(object):
+class Matcher(object):
     def __init__(self, *bindings):
         self.bindings = list(bindings)
 
     def register(self, pattern, handler):
         self.bindings.append((pattern, handler))
 
-    def match(self, obj):
+    def match(self, obj, *args):
         for pattern, handler in self.bindings:
             match = pattern << obj
             if match:
-                return handler(**match.ctx)
+                return handler(*args, **match.ctx)
         raise NoMatch('no registered pattern could match %s' % obj)
-    def __call__(self, obj):
-        return self.match(obj)
+    def __call__(self, obj, *args):
+        return self.match(obj, *args)
 
     def handler(self, pattern):
         def _reg(f):
@@ -31,26 +31,27 @@ class DynamicMatcher(object):
     def __repr__(self):
         return '%s(bindings=%s)' % (self.__class__.__name__, self.bindings)
 
-def statichandler(pattern):
+def handler(pattern):
     def wrapper(function):
         function.pattern = pattern
         return function
     return wrapper
 
+def _function_sort_key(function):
+    return function.func_code.co_firstlineno
+
 class _static_matcher_metacls(type):
     def __new__(mcs, name, bases, dict_):
         bindings = map(lambda f: (f.pattern, f),
-                sorted(f for f in dict_.values() if hasattr(f, 'pattern')))
-        matcher = DynamicMatcher(*bindings)
+                sorted((f for f in dict_.values() if hasattr(f, 'pattern')),
+                    key=_function_sort_key))
+        matcher = Matcher(*bindings)
         dict_['_matcher'] = matcher
         return type.__new__(mcs, name, bases, dict_)
 
-class StaticMatcher(object):
+class _StaticMatcher(object):
     __metaclass__ = _static_matcher_metacls
 
-    def __new__(cls, obj):
-        return cls._matcher.match(obj)
-
-    @classmethod
-    def match(cls, obj):
-        return cls(obj)
+class MatchFunction(_StaticMatcher):
+    def __new__(cls, *args):
+        return cls._matcher.match(args[-1], *args[:-1])
