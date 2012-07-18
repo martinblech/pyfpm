@@ -74,12 +74,12 @@ class TestCasePattern(unittest.TestCase):
         self.assertEquals(_c(MyCase, _eq(1)%'x')<<MyCase(1), _m({'x': 1}))
 
     def test_match_multiple_args(self):
-        self.assertEquals(_c(MyCase, _eq(1)%'x', _iof(str)*3%'y')<<
+        self.assertEquals(_c(MyCase, _eq(1)%'x' + _any()%'y')<<
                                                 MyCase(1, 'a', 'b', 'c'),
                 _m({'x': 1, 'y': ('a', 'b', 'c')}))
 
     def test_match_head_tail(self):
-        self.assertEquals(_c(MyCase, _any()%'head', _any()%'tail')%'x'<<
+        self.assertEquals(_c(MyCase, _any()%'head' + _any()%'tail')%'x'<<
                                                 MyCase(1, 2, 3),
                         _m({'head': 1, 'tail': (2, 3), 'x': MyCase(1, 2, 3)}))
 
@@ -141,6 +141,9 @@ class TestOperators(unittest.TestCase):
     def test_add(self):
         self.assertEquals(_(1) + _(), _l(_(1), _()))
 
+    def test_div(self):
+        self.assertEquals(_()/None, _().if_(None))
+
 class TestMultibind(unittest.TestCase):
     pattern = _(_()%'x', _()%'x', _()%'y')
     def test_sameok(self):
@@ -150,3 +153,11 @@ class TestMultibind(unittest.TestCase):
     def test_differentfail(self):
         print TestMultibind.pattern
         self.assertFalse(TestMultibind.pattern << (1, 2, 3))
+
+class TestCondition(unittest.TestCase):
+    def test_condition(self):
+        p = _(int)%'x'
+        self.assertTrue(p << 1)
+        p.if_(lambda x: x > 1)
+        self.assertFalse(p << 1)
+        self.assertTrue(p << 2)

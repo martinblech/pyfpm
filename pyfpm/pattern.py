@@ -13,6 +13,7 @@ class Match(object):
 class Pattern(object):
     def __init__(self):
         self.bound_name = None
+        self.condition = None
 
     def match(self, other, ctx=None):
         match = self._does_match(other, ctx)
@@ -25,12 +26,12 @@ class Pattern(object):
                 try:
                     previous = ctx[self.bound_name]
                     if previous != other:
-                        print '!!!!!!'
                         return None
                 except KeyError:
                     ctx[self.bound_name] = other
             # end repeated code
-            return Match(ctx)
+            if self.condition is None or self.condition(**ctx):
+                return Match(ctx)
         return None
     def __lshift__(self, other):
         return self.match(other)
@@ -40,6 +41,14 @@ class Pattern(object):
         return self
     def __mod__(self, name):
         return self.bind(name)
+
+    def if_(self, condition):
+        self.condition = condition
+        return self
+    def __div__(self, condition):
+        return self.if_(condition)
+    def __truediv__(self, condition):
+        return self.if_(condition)
 
     def length(self):
         return 1
@@ -178,7 +187,11 @@ class CasePattern(Pattern):
     def __init__(self, casecls, *initpatterns):
         super(CasePattern, self).__init__()
         self.casecls_pattern = InstanceOfPattern(casecls)
-        self.initargs_pattern = ListPattern(*initpatterns)
+        if (len(initpatterns) == 1 and
+                isinstance(initpatterns[0], ListPattern)):
+            self.initargs_pattern = initpatterns[0]
+        else:
+            self.initargs_pattern = build(*initpatterns, is_list=True)
 
     def match(self, other, ctx=None):
         if not self.casecls_pattern.match(other, ctx):

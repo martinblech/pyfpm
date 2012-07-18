@@ -14,7 +14,7 @@ class Matcher(object):
             match = pattern << obj
             if match:
                 return handler(*args, **match.ctx)
-        raise NoMatch('no registered pattern could match %s' % obj)
+        raise NoMatch('no registered pattern could match %s' % repr(obj))
     def __call__(self, obj, *args):
         return self.match(obj, *args)
 
