@@ -61,6 +61,7 @@ class TestList(unittest.TestCase):
         scalars = (1, 'abc', .5, 'd', lambda: None)
         for x in scalars:
             self.assertFalse(_l() << x)
+            self.assertFalse(_l(_any()) << x)
 
     # TODO: more tests
 
@@ -136,6 +137,9 @@ class TestOperators(unittest.TestCase):
         self.assertEquals(_(1) | _(), _or(_(1), _()))
         self.assertEquals(_or(_(1), _(2)) | _(3), _or(_(1), _(2), _(3)))
         self.assertEquals(_(1) | _or(_(2), _(3)), _or(_(1), _(2), _(3)))
+
+    def test_add(self):
+        self.assertEquals(_(1) + _(), _l(_(1), _()))
 
 class TestMultibind(unittest.TestCase):
     pattern = _(_()%'x', _()%'x', _()%'y')

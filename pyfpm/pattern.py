@@ -64,7 +64,7 @@ class Pattern(object):
 
     def head_tail_with(self, other):
         return ListPattern(self, other)
-    def __floordiv__(self, other):
+    def __add__(self, other):
         return self.head_tail_with(other)
 
     def __eq__(self, other):
@@ -125,9 +125,11 @@ class ListPattern(Pattern):
                 return Match(ctx)
         except TypeError:
             return None
+        if isinstance(other, basestring):
+            return None
         try:
             head, tail = other[0], other[1:]
-        except IndexError:
+        except (IndexError, TypeError):
             return None
         if self.head_pattern is not None:
             match = self.head_pattern.match(head, ctx)
