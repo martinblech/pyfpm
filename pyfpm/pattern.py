@@ -214,7 +214,6 @@ class OrPattern(Pattern):
             else:
                 ctx_ = None
             match = pattern.match(other, ctx_)
-            print pattern, other, match
             if match:
                 # repeated code, TODO figure out something better
                 ctx = match.ctx
