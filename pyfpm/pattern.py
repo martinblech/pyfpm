@@ -228,7 +228,7 @@ class OrPattern(Pattern):
                 return Match(ctx)
         return None
 
-def _build(*args, **kwargs):
+def build(*args, **kwargs):
     arglen = len(args)
     if arglen > 1:
         head, tail = args[0], args[1:]
@@ -250,8 +250,3 @@ def _build(*args, **kwargs):
             return ListPattern()
         return build(*arg)
     return EqualsPattern(arg)
-
-def build(*args, **kwargs):
-    result = _build(*args, **kwargs)
-    print args, kwargs, result
-    return result
