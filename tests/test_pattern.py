@@ -41,21 +41,6 @@ class TestInstance(unittest.TestCase):
     def test_not_match_different_type(self):
         self.assertFalse(_iof(int)%'x'<<'abc')
 
-_r = pattern.RangePattern
-class TestRange(unittest.TestCase):
-    def test_match_range_unbound(self):
-        self.assertEquals(_iof(str)*2<<('a', 'b'), _m())
-
-    def test_match_range(self):
-        self.assertEquals(_iof(int)*2%'x'<<(1, 2), _m({'x': (1, 2)}))
-
-    def test_not_match_scalar(self):
-        scalars = (1, 'abc', .5, 'd', lambda: None)
-        for x in scalars:
-            self.assertFalse(_r(length=0) << x)
-
-    # TODO: more tests
-
 _l = pattern.ListPattern
 class TestList(unittest.TestCase):
     def test_match_empty_list(self):
@@ -65,11 +50,11 @@ class TestList(unittest.TestCase):
         self.assertEquals(_l(_eq(1)%'x')<<[1], _m({'x': 1}))
 
     def test_match_multiple_items(self):
-        self.assertEquals(_l(_eq(1)%'x', _iof(str)%'y')<<(1, 'a'),
+        self.assertEquals(_l(_eq(1)%'x', _l(_iof(str)%'y'))<<(1, 'a'),
                 _m({'x': 1, 'y': 'a'}))
 
     def test_match_head_tail(self):
-        self.assertEquals(_l(_any()%'head', +_r()%'tail')<<(1, 2, 3),
+        self.assertEquals(_l(_any()%'head', _any()%'tail')<<(1, 2, 3),
                 _m({'head': 1, 'tail': (2, 3)}))
 
     def test_not_match_scalar(self):
@@ -93,7 +78,7 @@ class TestCasePattern(unittest.TestCase):
                 _m({'x': 1, 'y': ('a', 'b', 'c')}))
 
     def test_match_head_tail(self):
-        self.assertEquals(_c(MyCase, _any()%'head', +_r()%'tail')%'x'<<
+        self.assertEquals(_c(MyCase, _any()%'head', _any()%'tail')%'x'<<
                                                 MyCase(1, 2, 3),
                         _m({'head': 1, 'tail': (2, 3), 'x': MyCase(1, 2, 3)}))
 
@@ -133,22 +118,19 @@ class TestPBuilder(unittest.TestCase):
         self.assertEquals(_(), _any())
 
     def test_nil(self):
-        self.assertEquals(_([]), _r(length=0))
+        self.assertEquals(_([]), _l())
 
     def test_list(self):
-        self.assertEquals(_(1, str), _l(_(1), _(str)))
+        self.assertEquals(_(1, str), _l(_(1), _l(_(str))))
 
 class TestOperators(unittest.TestCase):
     def test_mul(self):
-        self.assertEquals(_()*2, _r(_any(), 2))
+        self.assertEquals(_()*2, _l(_any(), _l(_any())))
     def test_rmul(self):
         self.assertEquals(2*_(1), _(1)*2)
 
     def test_mod(self):
         self.assertEquals(_(1)%'x', _(1).bind('x'))
-
-    def test_pos(self):
-        self.assertEquals(+_(1), _(1).set_infinite())
 
     def test_or(self):
         self.assertEquals(_(1) | _(), _or(_(1), _()))
@@ -162,4 +144,5 @@ class TestMultibind(unittest.TestCase):
                 _m({'x': 1, 'y': 2}))
 
     def test_differentfail(self):
+        print TestMultibind.pattern
         self.assertFalse(TestMultibind.pattern << (1, 2, 3))

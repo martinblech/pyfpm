@@ -15,7 +15,9 @@ class Pattern(object):
         self.bound_name = None
 
     def match(self, other, ctx=None):
-        if self._does_match(other):
+        match = self._does_match(other, ctx)
+        if match:
+            ctx = match.ctx
             # repeated code, TODO figure out something better
             if self.bound_name:
                 if ctx is None:
@@ -23,6 +25,7 @@ class Pattern(object):
                 try:
                     previous = ctx[self.bound_name]
                     if previous != other:
+                        print '!!!!!!'
                         return None
                 except KeyError:
                     ctx[self.bound_name] = other
@@ -42,16 +45,11 @@ class Pattern(object):
         return 1
 
     def set_length(self, length):
-        return RangePattern(self, length)
+        return build(*([self]*length))
     def __mul__(self, length):
         return self.set_length(length)
     def __rmul__(self, length):
         return self.set_length(length)
-
-    def set_infinite(self):
-        return self.set_length(RangePattern.INFINITE)
-    def __pos__(self):
-        return self.set_infinite()
 
     def or_with(self, other):
         patterns = []
@@ -64,6 +62,11 @@ class Pattern(object):
     def __or__(self, other):
         return self.or_with(other)
 
+    def head_tail_with(self, other):
+        return ListPattern(self, other)
+    def __floordiv__(self, other):
+        return self.head_tail_with(other)
+
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
                 self.__dict__ == other.__dict__)
@@ -74,24 +77,30 @@ class Pattern(object):
                     self.__dict__.items() if v))
 
 class AnyPattern(Pattern):
-    def _does_match(self, other):
-        return True
+    def _does_match(self, other, ctx):
+        return Match(ctx)
 
 class EqualsPattern(Pattern):
     def __init__(self, obj):
         super(EqualsPattern, self).__init__()
         self.obj = obj
 
-    def _does_match(self, other):
-        return self.obj == other
+    def _does_match(self, other, ctx):
+        if self.obj == other:
+            return Match(ctx)
+        else:
+            return None
 
 class InstanceOfPattern(Pattern):
     def __init__(self, cls):
         super(InstanceOfPattern, self).__init__()
         self.cls = cls
 
-    def _does_match(self, other):
-        return isinstance(other, self.cls)
+    def _does_match(self, other, ctx):
+        if isinstance(other, self.cls):
+            return Match(ctx)
+        else:
+            return None
 
 class RegexPattern(Pattern):
     def __init__(self, regex):
@@ -102,77 +111,66 @@ class RegexPattern(Pattern):
         self.regex = regex
     # TODO: finish this, must improve Pattern._do_match
 
-class RangePattern(Pattern):
-    INFINITE = -1
-    def __init__(self, pattern=AnyPattern(), length=None):
-        super(RangePattern, self).__init__()
-        self.pattern = pattern
-        self._length = length
-
-    def set_length(self, length):
-        return RangePattern(self.pattern, length)
-
-    def length(self):
-        return self._length
-
-    def _does_match(self, other):
-        if not hasattr(other, '__iter__'):
-            return None
-        if self.pattern.bound_name:
-            raise ValueError("inner pattern in a range can't be bound")
-        l = self.length()
-        if l is None:
-            raise ValueError('range length unset')
-        if l == 1:
-            raise ValueError('range length must be higher than 1')
-        if l != RangePattern.INFINITE and len(other) != l:
-            return None
-        for item in other:
-            if not self.pattern._does_match(item):
-                return None
-        return True
-
 class ListPattern(Pattern):
-    def __init__(self, *patterns):
+    def __init__(self, head_pattern=None, tail_pattern=None):
         super(ListPattern, self).__init__()
-        self.patterns = patterns
+        self.head_pattern = head_pattern
+        self.tail_pattern = tail_pattern
 
-    def match(self, other, ctx=None):
-        if not hasattr(other, '__iter__'):
+    def _does_match(self, other, ctx):
+        try:
+            if (self.head_pattern is None and
+                    self.tail_pattern is None and
+                    len(other) == 0):
+                return Match(ctx)
+        except TypeError:
             return None
-        remaining = other
-        for pattern in self.patterns:
-            l = pattern.length()
-            if len(remaining) < l:
-                return None
-            if l == 1:
-                match = pattern.match(remaining[0], ctx)
-            elif l == RangePattern.INFINITE:
-                match = pattern.match(remaining, ctx)
-            else:
-                match = pattern.match(remaining[:l], ctx)
-            if not match:
-                return None
-            if ctx is None:
+        try:
+            head, tail = other[0], other[1:]
+        except IndexError:
+            return None
+        if self.head_pattern is not None:
+            match = self.head_pattern.match(head, ctx)
+            if match:
                 ctx = match.ctx
-            if l != RangePattern.INFINITE:
-                remaining = remaining[l:]
+                if self.tail_pattern is not None:
+                    match = self.tail_pattern.match(tail, ctx)
+                    if match:
+                        ctx = match.ctx
+                    else:
+                        return None
             else:
-                remaining = tuple()
-        if len(remaining):
-            return None
-        # repeated code, TODO figure out something better
-        if self.bound_name:
-            if ctx is None:
-                ctx = {}
-            try:
-                previous = ctx[self.bound_name]
-                if previous != other:
-                    return None
-            except KeyError:
-                ctx[self.bound_name] = other
-        # end repeated code
+                return None
+        else:
+            if len(other):
+                return None
         return Match(ctx)
+
+    # def match(self, other, ctx=None):
+    #     if not hasattr(other, '__iter__'):
+    #         return None
+    #     if self.head_pattern:
+    #         match = self.head_pattern.match(other[0], ctx)
+    #         if not match:
+    #             return None
+    #         ctx = match.ctx
+    #         if self.tail_pattern:
+    #             match = self.tail_pattern.match(other[1:], ctx)
+    #             if not match:
+    #                 return None
+    #             ctx = match.ctx
+    #     # repeated code, TODO figure out something better
+    #     if self.bound_name:
+    #         if ctx is None:
+    #             ctx = {}
+    #         try:
+    #             previous = ctx[self.bound_name]
+    #             if previous != other:
+    #                 return None
+    #         except KeyError:
+    #             ctx[self.bound_name] = other
+    #     # end repeated code
+    #     return Match(ctx)
 
 class CasePattern(Pattern):
     def __init__(self, casecls, *initpatterns):
@@ -184,7 +182,7 @@ class CasePattern(Pattern):
         if not self.casecls_pattern.match(other, ctx):
             return None
         match = self.initargs_pattern.match(other._case_args, ctx)
-        if not Match:
+        if not match:
             return None
         # repeated code, TODO figure out something better
         ctx = match.ctx
@@ -230,13 +228,16 @@ class OrPattern(Pattern):
                 return Match(ctx)
         return None
 
-def build(*args):
+def _build(*args, **kwargs):
     arglen = len(args)
     if arglen > 1:
-        return ListPattern(*map(build, args))
+        head, tail = args[0], args[1:]
+        return ListPattern(build(head), build(*tail, is_list=True))
     if arglen == 0:
         return AnyPattern()
     (arg,) = args
+    if kwargs.get('is_list', False):
+        return ListPattern(build(arg))
     if isinstance(arg, Pattern):
         return arg
     if hasattr(arg, '_case_args'):
@@ -246,6 +247,11 @@ def build(*args):
         return InstanceOfPattern(arg)
     if isinstance(arg, (tuple, list)):
         if len(arg) == 0:
-            return RangePattern(length=0)
+            return ListPattern()
         return build(*arg)
     return EqualsPattern(arg)
+
+def build(*args, **kwargs):
+    result = _build(*args, **kwargs)
+    print args, kwargs, result
+    return result
