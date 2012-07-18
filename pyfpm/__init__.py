@@ -1,3 +1,3 @@
-from pattern import build
-from caseclass import case_metacls, Case
-from matcher import Matcher, MatchFunction, handler, NoMatch
+from pyfpm.pattern import build
+from pyfpm.caseclass import case_metacls, Case
+from pyfpm.matcher import Matcher, MatchFunction, handler, NoMatch
