@@ -82,7 +82,7 @@ class Pattern(object):
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__,
-                ', '.join('='.join(map(str, (k, v))) for (k, v) in
+                ', '.join('='.join((str(k), repr(v))) for (k, v) in
                     self.__dict__.items() if v))
 
 class AnyPattern(Pattern):
@@ -130,6 +130,10 @@ class ListPattern(Pattern):
         super(ListPattern, self).__init__()
         self.head_pattern = head_pattern
         self.tail_pattern = tail_pattern
+
+    def head_tail_with(self, other):
+        return ListPattern(self.head_pattern,
+                self.tail_pattern.head_tail_with(other))
 
     def _does_match(self, other, ctx):
         try:
@@ -260,7 +264,7 @@ def build(*args, **kwargs):
         return ListPattern(build(arg))
     if isinstance(arg, Pattern):
         return arg
-    if hasattr(arg, '_case_args'):
+    if hasattr(arg, '__dict__') and '_case_args' in arg.__dict__:
         return CasePattern(arg.__class__,
                 *map(build, arg._case_args))
     if isinstance(arg, type):
