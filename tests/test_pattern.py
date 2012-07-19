@@ -148,7 +148,6 @@ class TestMultibind(unittest.TestCase):
                 _m({'x': 1, 'y': 2}))
 
     def test_differentfail(self):
-        print TestMultibind.pattern
         self.assertFalse(TestMultibind.pattern << (1, 2, 3))
 
 class TestCondition(unittest.TestCase):
