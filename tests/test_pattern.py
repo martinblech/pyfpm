@@ -142,13 +142,15 @@ class TestOperators(unittest.TestCase):
         self.assertEquals(_()/None, _().if_(None))
 
 class TestMultibind(unittest.TestCase):
-    pattern = _(_()%'x', _()%'x', _()%'y')
+    def setUp(self):
+        self.pattern = _(_()%'x', _()%'x', _()%'y')
+
     def test_sameok(self):
-        self.assertEquals(TestMultibind.pattern << (1, 1, 2),
+        self.assertEquals(self.pattern << (1, 1, 2),
                 _m({'x': 1, 'y': 2}))
 
     def test_differentfail(self):
-        self.assertFalse(TestMultibind.pattern << (1, 2, 3))
+        self.assertFalse(self.pattern << (1, 2, 3))
 
 class TestCondition(unittest.TestCase):
     def test_condition(self):

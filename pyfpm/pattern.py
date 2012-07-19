@@ -120,6 +120,11 @@ class RegexPattern(Pattern):
         self.regex = regex
     # TODO: finish this, must improve Pattern._do_match
 
+try:
+    _basestring = basestring
+except NameError:
+    _basestring = str
+
 class ListPattern(Pattern):
     def __init__(self, head_pattern=None, tail_pattern=None):
         super(ListPattern, self).__init__()
@@ -134,7 +139,7 @@ class ListPattern(Pattern):
                 return Match(ctx)
         except TypeError:
             return None
-        if isinstance(other, basestring):
+        if isinstance(other, _basestring):
             return None
         try:
             head, tail = other[0], other[1:]

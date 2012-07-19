@@ -1,3 +1,5 @@
+import sys
+
 class NoMatch(Exception): pass
 
 class Matcher(object):
@@ -35,8 +37,12 @@ def handler(pattern):
         return function
     return wrapper
 
-def _function_sort_key(function):
-    return function.func_code.co_firstlineno
+if sys.version_info < (3, 0):
+    def _function_sort_key(function):
+        return function.func_code.co_firstlineno
+else:
+    def _function_sort_key(function):
+        return function.__code__.co_firstlineno
 
 class _static_matcher_metacls(type):
     def __new__(mcs, name, bases, dict_):
