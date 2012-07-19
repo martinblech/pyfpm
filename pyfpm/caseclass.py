@@ -1,54 +1,17 @@
 """Scala-like case classes.
 """
+from pyfpm.caseclass_common import case_metacls
+try:
+    from pyfpm.caseclass_3x import _Case
+except SyntaxError:
+    from pyfpm.caseclass_2x import _Case
 
-import functools
-import inspect
-
-def _lookup(classes, attr):
-    for cls in classes:
-        try:
-            return getattr(cls, attr)
-        except AttributeError:
-            pass
-
-class case_metacls(type):
-    def __new__(mcs, name, bases, dict_):
-        original_init = (dict_.get('__init__', None) or
-                _lookup(bases, '__init__'))
-        if (hasattr(inspect, 'getargspec') and
-                hasattr(inspect, 'getcallargs') and
-                inspect.isfunction(original_init)):
-            # try introspection for Python __init__
-            argnames, varargs, keywords, _ = inspect.getargspec(original_init)
-            if keywords:
-                raise AttributeError(
-                        "case class __init__ is picky with kwargs")
-            def __init__(self, *args, **kwargs):
-                original_init(self, *args, **kwargs)
-                callargs = inspect.getcallargs(original_init, self, *args,
-                        **kwargs)
-                self._case_args = tuple(callargs[x] for x in argnames[1:])
-                if varargs:
-                    self._case_args += callargs[varargs]
-            functools.update_wrapper(__init__, original_init)
-        else:
-            # no introspection (python<2.7 or non-python function)
-            def __init__(self, *args, **kwargs):
-                if kwargs:
-                    raise AttributeError(
-                            "case class __init__ is picky with kwargs")
-                original_init(self, *args)
-                self._case_args = args
-        dict_['__init__'] = __init__
-        return type.__new__(mcs, name, bases, dict_)
-
-class Case(object):
+class Case(_Case):
     """ Base case class. You can either inherit from this or use the
     case_metacls metaclass directly.
     This won't be enforced, but case instances should be immutable. Matchers
     will only look at init-time values and won't check the current state.
     """
-    __metaclass__ = case_metacls
     def __init__(self): pass
     def __repr__(self):
         return '%s%s' % (self.__class__.__name__, self._case_args)
