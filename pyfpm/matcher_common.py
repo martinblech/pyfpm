@@ -1,5 +1,3 @@
-from pyfpm import pattern
-
 class NoMatch(Exception): pass
 
 class Matcher(object):
