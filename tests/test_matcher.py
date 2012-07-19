@@ -1,7 +1,4 @@
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 from pyfpm.matcher import Matcher, NoMatch, MatchFunction, handler
 from pyfpm.pattern import build as _

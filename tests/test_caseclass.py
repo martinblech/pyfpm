@@ -1,8 +1,5 @@
 import sys
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 from pyfpm import caseclass
 
@@ -21,16 +18,15 @@ class CaseMetaclass(unittest.TestCase, AbstractTests):
             __metaclass__ = caseclass.case_metacls
         self.MyCase = MyCase
 
-    @unittest.skipIf(sys.version_info < (2, 7),
-            'no support for kwargs introspection before 2.7')
     def test_fail_define_kwargs(self):
-        try:
-            class MyOtherCase(object):
-                __metaclass__ = caseclass.case_metacls
-                def __init__(self, **kwargs): pass
-            self.fail("can't define __init__ with kwargs")
-        except AttributeError:
-            pass
+        if sys.version_info >= (2, 7):
+            try:
+                class MyOtherCase(object):
+                    __metaclass__ = caseclass.case_metacls
+                    def __init__(self, **kwargs): pass
+                self.fail("can't define __init__ with kwargs")
+            except AttributeError:
+                pass
 
 class ExtendCaseClass(unittest.TestCase, AbstractTests):
     def setUp(self):
@@ -39,26 +35,23 @@ class ExtendCaseClass(unittest.TestCase, AbstractTests):
                 pass
         self.MyCase = MyCase
 
-    @unittest.skipIf(sys.version_info < (2, 7),
-            'no support for kwargs introspection before 2.7')
     def test_fail_define_kwargs(self):
-        try:
-            class MyOtherCase(caseclass.Case):
-                def __init__(self, **kwargs): pass
-            self.fail("can't define __init__ with kwargs")
-        except AttributeError:
-            pass
+        if sys.version_info >= (2, 7):
+            try:
+                class MyOtherCase(caseclass.Case):
+                    def __init__(self, **kwargs): pass
+                self.fail("can't define __init__ with kwargs")
+            except AttributeError:
+                pass
 
     # test additional goodies for Python initializers
 
-    @unittest.skipIf(sys.version_info < (2, 7),
-            'no support for kwargs introspection before 2.7')
     def test_default_args(self):
-        case = self.MyCase(1, 2)
-        self.assertEquals(case._case_args, (1, 2, 3))
+        if sys.version_info >= (2, 7):
+            case = self.MyCase(1, 2)
+            self.assertEquals(case._case_args, (1, 2, 3))
 
-    @unittest.skipIf(sys.version_info < (2, 7),
-            'no support for kwargs introspection before 2.7')
     def test_use_kwargs(self):
-        case = self.MyCase(1, c=3, b=2)
-        self.assertEquals(case._case_args, (1, 2, 3))
+        if sys.version_info >= (2, 7):
+            case = self.MyCase(1, c=3, b=2)
+            self.assertEquals(case._case_args, (1, 2, 3))

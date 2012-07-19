@@ -247,7 +247,7 @@ def build(*args, **kwargs):
     arglen = len(args)
     if arglen > 1:
         head, tail = args[0], args[1:]
-        return ListPattern(build(head), build(*tail, **(dict(is_list=True)))
+        return ListPattern(build(head), build(*tail, **(dict(is_list=True))))
     if arglen == 0:
         return AnyPattern()
     (arg,) = args
