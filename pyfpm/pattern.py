@@ -191,7 +191,7 @@ class CasePattern(Pattern):
                 isinstance(initpatterns[0], ListPattern)):
             self.initargs_pattern = initpatterns[0]
         else:
-            self.initargs_pattern = build(*initpatterns, is_list=True)
+            self.initargs_pattern = build(*initpatterns, **dict(is_list=True))
 
     def match(self, other, ctx=None):
         if not self.casecls_pattern.match(other, ctx):
@@ -247,7 +247,7 @@ def build(*args, **kwargs):
     arglen = len(args)
     if arglen > 1:
         head, tail = args[0], args[1:]
-        return ListPattern(build(head), build(*tail, is_list=True))
+        return ListPattern(build(head), build(*tail, **(dict(is_list=True)))
     if arglen == 0:
         return AnyPattern()
     (arg,) = args
