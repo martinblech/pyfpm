@@ -1,3 +1,4 @@
 from pyfpm.caseclass_common import case_metacls
 
-class _Case(metaclass=case_metacls): pass
+class _Case(object, metaclass=case_metacls):
+    pass
