@@ -5,7 +5,7 @@ pattern matching
 """
 from __future__ import print_function
 
-from pyfpm import Matcher as M, NoMatch, MatchFunction
+from pyfpm import Matcher as M, NoMatch, MatchFunction, handler
 from pyfpm import build as _
 from pyfpm import Case
 
@@ -104,15 +104,31 @@ for x in (('-l', 'eng'),
 
 print('-'*80)
 class Expression(Case): pass
-class X(Expression): pass
+class X(Expression):
+    def __str__(self):
+        return 'x'
 class Const(Expression):
-    def __init__(self, value): pass
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return str(self.value)
 class Add(Expression):
-    def __init__(self, left, right): pass
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+    def __str__(self):
+        return '(' + str(self.left) + ' + ' + str(self.right) + ')'
 class Mult(Expression):
-    def __init__(self, left, right): pass
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+    def __str__(self):
+        return '(' + str(self.left) + ' * ' + str(self.right) + ')'
 class Neg(Expression):
-    def __init__(self, expr): pass
+    def __init__(self, expr):
+        self.expr = expr
+    def __str__(self):
+        return '-' + str(self.expr)
 
 eval = M([
         ('X()',
@@ -149,3 +165,76 @@ print('df:', df)
 result = eval(df, 3)
 print('df(3):', result)
 assert result == 12
+
+class _simplify(MatchFunction):
+    @handler('Mult(Const(x), Const(y))')
+    def mult_consts(x, y):
+        return Const(x * y)
+
+    @handler('Add(Const(x), Const(y))')
+    def add_consts(x, y):
+        return Const(x + y)
+
+    @handler('Mult(Const(0), _)')
+    def mult_zero_left():
+        return Const(0)
+
+    @handler('Mult(_, Const(0))')
+    def mult_zero_right():
+        return Const(0)
+
+    @handler('Mult(Const(1), expr)')
+    def mult_one_left(expr):
+        return simplify(expr)
+
+    @handler('Mult(expr, Const(1))')
+    def mult_one_right(expr):
+        return simplify(expr)
+
+    @handler('Add(Const(0), expr)')
+    def add_zero_left(expr):
+        return simplify(expr)
+
+    @handler('Add(expr, Const(0))')
+    def add_zero_right(expr):
+        return simplify(expr)
+
+    @handler('Neg(Neg(expr))')
+    def double_negation(expr):
+        return simplify(expr)
+
+    @handler('Add(left, right)')
+    def normal_add(left, right):
+        return Add(simplify(left), simplify(right))
+
+    @handler('Mult(left, right)')
+    def normal_mult(left, right):
+        return Mult(simplify(left), simplify(right))
+
+    @handler('Neg(expr)')
+    def normal_negation(expr):
+        return simplify(expr)
+
+    @handler('expr')
+    def no_can_do(expr):
+        return expr
+
+def simplify(expr):
+    while True:
+        simplified = _simplify(expr)
+        if simplified == expr:
+            return simplified
+        expr = simplified
+
+df_simplified = simplify(df)
+print('df_simplified:', df_simplified)
+result = eval(df_simplified, 3)
+print('df_simplified(3)', result)
+assert result == 12
+
+for expr in (
+        Add(Const(5), Const(10)),
+        Mult(Mult(Mult(Const(5), Add(Const(1), Const(0))), Const(.2)), X()),
+        ):
+    print('expr:', expr)
+    print('simplified:', simplify(expr))
