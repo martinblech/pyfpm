@@ -84,9 +84,7 @@ def badArgument(bad):
     print('bad argument:', bad)
 parseArgument = M([
         ('["-l", lang]', setLanguageTo),
-        # TODO if syntax
-        (_(_('-o') | _('--optim'), _(int)%'n').if_(lambda n: 0 < n <= 5),
-            setOptimizationLevel),
+        ('["-o" | "--optim", n:int] if 0 < n <= 5', setOptimizationLevel),
         ('["-o" | "--optim", badLevel]', badOptimizationLevel),
         ('["-h" | "--help", None]', displayHelp),
         ('bad', badArgument),
