@@ -115,3 +115,28 @@ class TestParser(unittest.TestCase):
     def test_case_classes(self):
         self.assertEquals(self.parse('Case3(1, 2, 3)'), _(Case3(1, 2, 3)))
         self.assertEquals(self.parse('Case0()'), _(Case0()))
+
+    def test_conditional_pattern(self):
+        p = self.parse('_ if False')
+        self.assertFalse(p << 1)
+        
+        p = self.parse('x:int if x > 1')
+        self.assertFalse(p << 1)
+        self.assertTrue(p << 2)
+
+        p = self.parse('x if x==unittest')
+        self.assertFalse(p << parser)
+        self.assertTrue(p << unittest)
+
+        p = self.parse('x if y==1')
+        try:
+            p << 1
+            self.fail()
+        except NameError:
+            pass
+
+        try:
+            self.parse('x if TY*(*&^')
+            self.fail()
+        except SyntaxError:
+            pass

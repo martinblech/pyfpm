@@ -3,7 +3,7 @@ import inspect
 from pyparsing import Literal, Word, Group, Combine, Suppress, OneOrMore,\
         Forward, Optional, alphas, nums, alphanums, stringEnd, oneOf,\
         quotedString, dblQuotedString, removeQuotes, delimitedList,\
-        ParseException, Keyword
+        ParseException, Keyword, restOfLine, ParseFatalException
 
 from pyfpm import build as _
 
@@ -97,7 +97,20 @@ def Parser(context=None):
             'or_expression').setParseAction(
                     lambda *args: args[-1][0] | args[-1][1])
 
-    pattern << (or_expression | or_clause)('pattern')
+    def conditional_pattern_action(*args):
+        try:
+            pattern, condition_string = args[-1]
+            code = compile(condition_string.strip(),
+                    '<pattern_condition>', 'eval')
+            pattern.if_(lambda **kwargs: eval(code, context, kwargs))
+            return pattern
+        except ValueError:
+            pass
+
+    pattern << ((or_expression | or_clause) +
+            Optional(Suppress(Keyword('if')) + restOfLine))(
+                    'pattern').setParseAction(conditional_pattern_action)
+
     # end grammar
 
     def parse(expression):
