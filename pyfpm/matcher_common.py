@@ -73,9 +73,10 @@ class _static_matcher_metacls(type):
         dict_['_matcher'] = matcher
         return type.__new__(mcs, name, bases, dict_)
 
-def match_args(pattern):
+def match_args(pattern, context=None):
     if isinstance(pattern, _basestring):
-        context = _get_caller_globals()
+        if context is None:
+            context = _get_caller_globals()
         pattern = Parser(context)(pattern)
     def wrapper(function):
         @wraps(function)
@@ -105,9 +106,10 @@ class Unpacker(object):
     def __init__(self):
         self.vars = {}
 
-    def __call__(self, pattern):
+    def __call__(self, pattern, context=None):
         if isinstance(pattern, _basestring):
-            context = _get_caller_globals()
+            if context is None:
+                context = _get_caller_globals()
             pattern = Parser(context)(pattern)
         return _UnpackerHelper(self.vars, pattern)
 
