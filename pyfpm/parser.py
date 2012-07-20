@@ -7,10 +7,13 @@ from pyparsing import Literal, Word, Group, Combine, Suppress, OneOrMore,\
 
 from pyfpm import build as _
 
+def _get_caller_globals():
+    frame = inspect.getouterframes(inspect.currentframe())[2][0]
+    return frame.f_globals
+
 def Parser(context=None):
     if context is None:
-        frame = inspect.getouterframes(inspect.currentframe())[1][0]
-        context = frame.f_globals
+        context = _get_caller_globals()
 
     # parsing actions
     def get_type(type_name):
@@ -61,7 +64,7 @@ def Parser(context=None):
     const = (float_const | int_const | str_const)(
             'const').setParseAction(lambda *args: _(args[-1].const))
 
-    scalar = (var | const)('scalar')
+    scalar = Forward()
 
     pattern = Forward()
 
@@ -70,11 +73,18 @@ def Parser(context=None):
 
     list_item = (scalar | pattern)('list_item')
 
-    full_list = (Suppress('[') + Optional(delimitedList(list_item)) +
-            Suppress(']'))('full_list').setParseAction(
-                    lambda *args: _(list(args[-1])))
+    list_contents = Optional(delimitedList(list_item))('list_contents')
+
+    full_list = (Suppress('[') + list_contents + Suppress(']'))(
+            'full_list').setParseAction(lambda *args: _(list(args[-1])))
 
     list_ = (head_tail | full_list)('list')
+
+    case_class = Combine(type_ + Suppress('(') + list_contents +
+            Suppress(')'))('case_class').setParseAction(
+                lambda *args: _(args[-1][0].type_(*args[-1][0].list_contents)))
+
+    scalar << (var | const | case_class)('scalar')
 
     or_clause = (list_ | scalar)('or_clause')
 

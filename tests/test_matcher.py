@@ -4,6 +4,13 @@ from pyfpm.matcher import Matcher, NoMatch, MatchFunction, handler
 from pyfpm.pattern import build as _
 
 class TestMatcher(unittest.TestCase):
+    def test_constructor(self):
+        f = lambda: None
+        m1 = Matcher([(_(), f)])
+        m2 = Matcher()
+        m2.register(_(), f)
+        self.assertEquals(m1, m2)
+
     def test_equality(self):
         m1 = Matcher()
         m2 = Matcher()
@@ -53,6 +60,15 @@ class TestMatcher(unittest.TestCase):
         self.assertEquals(m(3), 'just an int')
         self.assertEquals(m(1), 'my precious, the one')
 
+    def test_autoparse(self):
+        m = Matcher([('1', lambda: None)])
+        self.assertEquals(m.bindings[0][0], _(1))
+
+    def test_autoparse_context(self):
+        m = Matcher([('y:TestMatcher', lambda y: self.assertEquals(self, y))])
+        self.assertEquals(m.bindings[0][0], _(TestMatcher)%'y')
+        m(self)
+
 class TestMatchFunction(unittest.TestCase):
     def test_simplematch(self):
         class m(MatchFunction): pass
@@ -92,3 +108,17 @@ class TestMatchFunction(unittest.TestCase):
                 return (args, kwargs)
         self.assertEquals(m(None), ((), {'x': None}))
         self.assertEquals(m(1, 'abc', None), ((1, 'abc'), {'x': None}))
+
+    def test_autoparse(self):
+        class m(MatchFunction):
+            @handler('_')
+            def any(): pass
+        self.assertEquals(m._matcher.bindings[0][0], _())
+
+    def test_autoparse_context(self):
+        class m(MatchFunction):
+            @handler('x:TestMatchFunction')
+            def f(x):
+                self.assertEquals(x, self)
+        self.assertEquals(m._matcher.bindings[0][0], _(TestMatchFunction)%'x')
+        m(self)

@@ -1,6 +1,10 @@
 import unittest
 
-from pyfpm import parser, build as _
+from pyfpm import parser, caseclass, build as _
+
+class Case0(caseclass.Case): pass
+class Case3(caseclass.Case):
+    def __init__(self, a, b, c): pass
 
 class TestParser(unittest.TestCase):
     def setUp(self):
@@ -103,3 +107,7 @@ class TestParser(unittest.TestCase):
 
     def test_or(self):
         self.assertEquals(self.parse('x | y'), _()%'x' | _()%'y')
+
+    def test_case_classes(self):
+        self.assertEquals(self.parse('Case3(1, 2, 3)'), _(Case3(1, 2, 3)))
+        self.assertEquals(self.parse('Case0()'), _(Case0()))
