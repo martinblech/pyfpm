@@ -31,59 +31,63 @@ def Parser(context=None):
 
     # begin grammar
     type_ = Word(alphas, alphanums + '._')('type_').setParseAction(
-            lambda r, *x: get_type(r.type_))
+            lambda *args: get_type(args[-1].type_))
 
     anon_var = Literal("_")('anon_var').setParseAction(lambda *x: _())
 
     named_var = Word(alphas, alphanums + '_')('named_var').setParseAction(
-            lambda r, *x: get_named_var(r.named_var))
+            lambda *args: get_named_var(args[-1].named_var))
 
     untyped_var = (named_var | anon_var)('untyped_var')
 
     typed_var = (untyped_var + Suppress(':') + type_)(
             'typed_var').setParseAction(
-            lambda r, *x: _(r.type_)%r.untyped_var.bound_name)
+            lambda *args: _(args[-1].type_)%args[-1].untyped_var.bound_name)
 
     var = (typed_var | untyped_var)('var')
 
     int_const = Combine(Optional('-') + Word(nums))(
-            'int_const').setParseAction(lambda r, *x: int(r.int_const))
+            'int_const').setParseAction(lambda *args: int(args[-1].int_const))
 
     float_const = Combine(Optional('-') + Word(nums) + Literal('.')
             + Optional(Word(nums)) |
             Optional('-') + Literal('.') + Word(nums))(
-            'float_const').setParseAction(lambda r, *x: float(r.float_const))
+            'float_const').setParseAction(
+                    lambda *args: float(args[-1].float_const))
 
     str_const = (quotedString | dblQuotedString)('str_const').setParseAction(
             removeQuotes)
 
     const = (float_const | int_const | str_const)(
-            'const').setParseAction(lambda r, *x: _(r.const))
+            'const').setParseAction(lambda *args: _(args[-1].const))
 
     scalar = (var | const)('scalar')
 
     pattern = Forward()
 
     head_tail = (scalar + Suppress('::') + pattern)(
-            'head_tail').setParseAction(lambda r, *x: r[0] + r[1])
+            'head_tail').setParseAction(lambda *args: args[-1][0] + args[-1][1])
 
     list_item = (scalar | pattern)('list_item')
 
     full_list = (Suppress('[') + Optional(delimitedList(list_item)) +
-            Suppress(']'))('full_list').setParseAction(lambda r, *x: _(list(r)))
+            Suppress(']'))('full_list').setParseAction(
+                    lambda *args: _(list(args[-1])))
 
     list_ = (head_tail | full_list)('list')
 
     or_clause = (list_ | scalar)('or_clause')
 
     or_expression = (or_clause + Suppress('|') + pattern)(
-            'or_expression').setParseAction(lambda r, *x: r[0] | r[1])
+            'or_expression').setParseAction(
+                    lambda *args: args[-1][0] | args[-1][1])
 
     pattern << (or_expression | or_clause)('pattern')
     # end grammar
 
     def parse(expression):
-        return pattern.parseString(expression, parseAll=True)[0]
+        (p,) = pattern.parseString(expression, parseAll=True)
+        return p
 
     parse.context = context
     return parse
