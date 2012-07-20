@@ -4,8 +4,7 @@ Loose port of the examples at `A Tour of Scala: Case Classes <http://www.scala-l
 """
 from __future__ import print_function
 
-from pyfpm import Matcher as M
-from pyfpm import build as _
+from pyfpm import MatchFunction, handler
 from pyfpm import Case
 
 class Term(Case): pass
@@ -30,26 +29,33 @@ x = Var('x')
 print(x.name)
 
 print('-'*80)
-printTerm = M([
-        (_(Var(_(str)%'n')), lambda n: (
-            print(n, end='')
-            )),
-        (_(Fun(_(str)%'x', _(Term)%'b')), lambda x, b: (
-            print('^' + x + '.', end=''),
-            printTerm(b)
-            )),
-        (_(App(_(Term)%'f', _(Term)%'v')), lambda f, v: (
-            print('(', end=''),
-            printTerm(f),
-            print(' ', end=''),
-            printTerm(v),
-            print(')', end='')
-            )),
-        ])
-isIdentityFun = M([
-        (_(Fun(_()%'x', Var(_()%'y'))), lambda x, y: x==y),
-        (_(), lambda: False),
-        ])
+class printTerm(MatchFunction):
+    @handler('Var(n:str)')
+    def var(n):
+        print(n, end='')
+
+    @handler('Fun(x:str, b:Term)')
+    def fun(x, b):
+        print('^' + x + '.', end='')
+        printTerm(b)
+
+    @handler('App(f:Term, v:Term)')
+    def app(f, v):
+        print('(', end='')
+        printTerm(f)
+        print(' ', end='')
+        printTerm(v)
+        print(')', end='')
+
+class isIdentityFun(MatchFunction):
+    @handler('Fun(x, Var(y))')
+    def identity(x, y):
+        return x == y
+
+    @handler('_')
+    def other():
+        return False
+
 id = Fun('x', Var('x'))
 t = Fun('x', Fun('y', App(Var('x'), Var('y'))))
 printTerm(t)
