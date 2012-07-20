@@ -1,6 +1,7 @@
 import unittest
 
-from pyfpm.matcher import Matcher, NoMatch, MatchFunction, handler, match_args
+from pyfpm.matcher import Matcher, NoMatch, MatchFunction, handler,\
+        match_args, Unpacker
 from pyfpm.pattern import build as _
 
 class TestMatcher(unittest.TestCase):
@@ -147,3 +148,25 @@ class TestMatchArgsDecorator(unittest.TestCase):
         self.assertEquals(f(1), (1, ()))
         self.assertEquals(f(1, 2), (1, (2,)))
         self.assertEquals(f(1, 2, 3), (1, (2, 3)))
+
+class TestUnpacker(unittest.TestCase):
+    def test_unpacker(self):
+        unpacker = Unpacker()
+        unpacker('head :: tail') << (1, 2, 3)
+        self.assertEquals(unpacker.head, 1)
+        self.assertEquals(unpacker.tail, (2, 3))
+        try:
+            unpacker.fdsa
+            self.fail('no var fdsa')
+        except AttributeError:
+            pass
+        try:
+            unpacker('x:str') << 1
+            self.fail('1 is not a str')
+        except NoMatch:
+            pass
+        try:
+            unpacker.x
+            self.fail('no var x')
+        except AttributeError:
+            pass

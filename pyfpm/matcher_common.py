@@ -1,4 +1,5 @@
 import sys
+import inspect
 from functools import wraps
 
 from pyfpm.parser import Parser, _get_caller_globals
@@ -85,3 +86,33 @@ def match_args(pattern):
             return function(**match.ctx)
         return f
     return wrapper
+
+class _UnpackerHelper(object):
+    def __init__(self, vars, pattern):
+        self.vars = vars
+        self.pattern = pattern
+
+    def _do(self, other):
+        match = self.pattern.match(other)
+        if not match:
+            raise NoMatch("%s doesn't match %s" % (self.pattern, other))
+        self.vars.update(match.ctx)
+
+    def __lshift__(self, other):
+        return self._do(other)
+
+class Unpacker(object):
+    def __init__(self):
+        self.vars = {}
+
+    def __call__(self, pattern):
+        if isinstance(pattern, _basestring):
+            context = _get_caller_globals()
+            pattern = Parser(context)(pattern)
+        return _UnpackerHelper(self.vars, pattern)
+
+    def __getattr__(self, name):
+        try:
+            return self.vars[name]
+        except KeyError:
+            raise AttributeError('no var named %s' % repr(name))
