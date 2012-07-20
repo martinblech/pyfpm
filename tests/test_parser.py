@@ -87,6 +87,7 @@ class TestParser(unittest.TestCase):
 
     def test_head_tail(self):
         self.assertEquals(self.parse('head :: tail'), _()%'head' + _()%'tail')
+        self.assertEquals(self.parse('head :: []'), _()%'head' + _([]))
         self.assertEquals(self.parse('a :: b :: c'),
                 _()%'a' + _()%'b' + _()%'c')
         self.assertEquals(self.parse('a :: b :: c :: d'),
@@ -97,3 +98,8 @@ class TestParser(unittest.TestCase):
         self.assertEquals(self.parse('[1]'), _([1]))
         self.assertEquals(self.parse('[_, x:int]'), _(_(), _(int)%'x'))
         self.assertEquals(self.parse('[_, []]'), _(_(), _([])))
+        self.assertEquals(self.parse('[[]]'), _([_([])]))
+        self.assertEquals(self.parse('[[], _]'), _([_([]), _()]))
+
+    def test_or(self):
+        self.assertEquals(self.parse('x | y'), _()%'x' | _()%'y')
