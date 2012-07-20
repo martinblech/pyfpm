@@ -10,7 +10,6 @@ class AbstractTests(object):
 
     def test_extra_args(self):
         case = self.MyCase(1, 2, 3, 4, 5)
-        print(self, case)
         self.assertEquals(case._case_args, (1, 2, 3, 4, 5))
 
 if sys.version_info < (3, 0):
