@@ -11,6 +11,23 @@ def _get_caller_globals():
     frame = inspect.getouterframes(inspect.currentframe())[2][0]
     return frame.f_globals
 
+class IfCondition(object):
+    def __init__(self, code, context):
+        self.code = code
+        self.context = context
+
+    def __call__(self, **kwargs):
+        return eval(self.code, self.context, kwargs)
+
+    def __eq__(self, other):
+        return (isinstance(other, IfCondition) and
+                self.__dict__ == other.__dict__)
+    
+    def __str__(self):
+        return 'IfCondition(code=%s, context=%s)' % (
+                self.code,
+                self.context)
+
 def Parser(context=None):
     if context is None:
         context = _get_caller_globals()
@@ -102,7 +119,7 @@ def Parser(context=None):
             pattern, condition_string = args[-1]
             code = compile(condition_string.strip(),
                     '<pattern_condition>', 'eval')
-            pattern.if_(lambda **kwargs: eval(code, context, kwargs))
+            pattern.if_(IfCondition(code, context))
             return pattern
         except ValueError:
             pass

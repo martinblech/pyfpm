@@ -140,3 +140,9 @@ class TestParser(unittest.TestCase):
             self.fail()
         except SyntaxError:
             pass
+
+    def test_conditional_pattern_equality(self):
+        self.assertEquals(self.parse('x if x'), self.parse('x if x'))
+        self.assertNotEquals(self.parse('x if not x'), self.parse('x if x'))
+        self.assertTrue(str(self.parse('x if x').condition).startswith(
+            'IfCondition(code='))
