@@ -3,7 +3,7 @@ import inspect
 from pyparsing import Literal, Word, Group, Combine, Suppress, OneOrMore,\
         Forward, Optional, alphas, nums, alphanums, stringEnd, oneOf,\
         quotedString, dblQuotedString, removeQuotes, delimitedList,\
-        ParseException
+        ParseException, Keyword
 
 from pyfpm import build as _
 
@@ -36,7 +36,7 @@ def Parser(context=None):
     type_ = Word(alphas, alphanums + '._')('type_').setParseAction(
             lambda *args: get_type(args[-1].type_))
 
-    anon_var = Literal("_")('anon_var').setParseAction(lambda *x: _())
+    anon_var = Literal("_")('anon_var').setParseAction(lambda *args: _())
 
     named_var = Word(alphas, alphanums + '_')('named_var').setParseAction(
             lambda *args: get_named_var(args[-1].named_var))
@@ -61,7 +61,11 @@ def Parser(context=None):
     str_const = (quotedString | dblQuotedString)('str_const').setParseAction(
             removeQuotes)
 
-    const = (float_const | int_const | str_const)(
+    true = Keyword('True').setParseAction(lambda *args: _(True))
+    false = Keyword('False').setParseAction(lambda *args: _(False))
+    null = Keyword('None').setParseAction(lambda *args: _(None))
+
+    const = (float_const | int_const | str_const | true | false | null)(
             'const').setParseAction(lambda *args: _(args[-1].const))
 
     scalar = Forward()
@@ -71,7 +75,7 @@ def Parser(context=None):
     head_tail = (scalar + Suppress('::') + pattern)(
             'head_tail').setParseAction(lambda *args: args[-1][0] + args[-1][1])
 
-    list_item = (scalar | pattern)('list_item')
+    list_item = (pattern | scalar)('list_item')
 
     list_contents = Optional(delimitedList(list_item))('list_contents')
 
@@ -84,7 +88,8 @@ def Parser(context=None):
             Suppress(')'))('case_class').setParseAction(
                 lambda *args: _(args[-1][0].type_(*args[-1][0].list_contents)))
 
-    scalar << (var | const | case_class)('scalar')
+    scalar << (const | var | case_class |
+            Suppress('(') + pattern + Suppress(')'))('scalar')
 
     or_clause = (list_ | scalar)('or_clause')
 
