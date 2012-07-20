@@ -103,18 +103,9 @@ class _UnpackerHelper(object):
         return self._do(other)
 
 class Unpacker(object):
-    def __init__(self):
-        self.vars = {}
-
     def __call__(self, pattern, context=None):
         if isinstance(pattern, _basestring):
             if context is None:
                 context = _get_caller_globals()
             pattern = Parser(context)(pattern)
-        return _UnpackerHelper(self.vars, pattern)
-
-    def __getattr__(self, name):
-        try:
-            return self.vars[name]
-        except KeyError:
-            raise AttributeError('no var named %s' % repr(name))
+        return _UnpackerHelper(self.__dict__, pattern)
