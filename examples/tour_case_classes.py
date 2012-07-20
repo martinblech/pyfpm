@@ -48,9 +48,9 @@ class printTerm(MatchFunction):
         print(')', end='')
 
 class isIdentityFun(MatchFunction):
-    @handler('Fun(x, Var(y))')
+    @handler('Fun(x, Var(y)) if x==y')
     def identity(x, y):
-        return x == y
+        return True
 
     @handler('_')
     def other():
