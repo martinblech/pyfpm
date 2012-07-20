@@ -1,12 +1,26 @@
 import sys
 
+from pyfpm.parser import Parser, _get_caller_globals
+
+try:
+    _basestring = basestring
+except NameError:
+    _basestring = str
+
 class NoMatch(Exception): pass
 
 class Matcher(object):
-    def __init__(self, *bindings):
-        self.bindings = list(bindings)
+    def __init__(self, bindings=[], context=None):
+        self.bindings = []
+        if context is None:
+            context = _get_caller_globals()
+        self.parser = Parser(context)
+        for pattern, handler in bindings:
+            self.register(pattern, handler)
 
     def register(self, pattern, handler):
+        if isinstance(pattern, _basestring):
+            pattern = self.parser(pattern)
         self.bindings.append((pattern, handler))
 
     def match(self, obj, *args):
@@ -26,10 +40,13 @@ class Matcher(object):
 
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
-                self.__dict__ == other.__dict__)
+                self.bindings == other.bindings and
+                self.parser.context == other.parser.context)
 
     def __repr__(self):
-        return '%s(bindings=%s)' % (self.__class__.__name__, self.bindings)
+        return '%s(%s)' % (self.__class__.__name__,
+                ','.join('='.join((str(k), repr(v)))
+                    for (k, v) in self.__dict__.items()))
 
 def handler(pattern):
     def wrapper(function):
@@ -49,6 +66,7 @@ class _static_matcher_metacls(type):
         bindings = map(lambda f: (f.pattern, f),
                 sorted((f for f in dict_.values() if hasattr(f, 'pattern')),
                     key=_function_sort_key))
-        matcher = Matcher(*bindings)
+        context = _get_caller_globals()
+        matcher = Matcher(bindings=bindings, context=context)
         dict_['_matcher'] = matcher
         return type.__new__(mcs, name, bases, dict_)
