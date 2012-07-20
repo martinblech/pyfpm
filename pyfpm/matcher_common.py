@@ -1,4 +1,5 @@
 import sys
+from functools import wraps
 
 from pyfpm.parser import Parser, _get_caller_globals
 
@@ -70,3 +71,17 @@ class _static_matcher_metacls(type):
         matcher = Matcher(bindings=bindings, context=context)
         dict_['_matcher'] = matcher
         return type.__new__(mcs, name, bases, dict_)
+
+def match_args(pattern):
+    if isinstance(pattern, _basestring):
+        context = _get_caller_globals()
+        pattern = Parser(context)(pattern)
+    def wrapper(function):
+        @wraps(function)
+        def f(*args):
+            match = pattern.match(args)
+            if not match:
+                raise NoMatch("%s doesn't match %s" % (pattern, args))
+            return function(**match.ctx)
+        return f
+    return wrapper

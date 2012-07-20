@@ -1,6 +1,6 @@
 import unittest
 
-from pyfpm.matcher import Matcher, NoMatch, MatchFunction, handler
+from pyfpm.matcher import Matcher, NoMatch, MatchFunction, handler, match_args
 from pyfpm.pattern import build as _
 
 class TestMatcher(unittest.TestCase):
@@ -122,3 +122,28 @@ class TestMatchFunction(unittest.TestCase):
                 self.assertEquals(x, self)
         self.assertEquals(m._matcher.bindings[0][0], _(TestMatchFunction)%'x')
         m(self)
+
+class TestMatchArgsDecorator(unittest.TestCase):
+    def test_decorator(self):
+        @match_args('[]')
+        def f():
+            return 1
+        self.assertEquals(f(), 1)
+        try:
+            f(1)
+            self.fail()
+        except NoMatch:
+            pass
+
+    def test_head_tail(self):
+        @match_args('head :: tail')
+        def f(head, tail):
+            return (head, tail)
+        try:
+            f()
+            self.fail()
+        except NoMatch:
+            pass
+        self.assertEquals(f(1), (1, ()))
+        self.assertEquals(f(1, 2), (1, (2,)))
+        self.assertEquals(f(1, 2, 3), (1, (2, 3)))
