@@ -19,7 +19,6 @@ class Pattern(object):
         match = self._does_match(other, ctx)
         if match:
             ctx = match.ctx
-            # repeated code, TODO figure out something better
             if self.bound_name:
                 if ctx is None:
                     ctx = {}
@@ -29,7 +28,6 @@ class Pattern(object):
                         return None
                 except KeyError:
                     ctx[self.bound_name] = other
-            # end repeated code
             if self.condition is None or self.condition(**ctx):
                 return Match(ctx)
         return None
@@ -166,32 +164,6 @@ class ListPattern(Pattern):
                 return None
         return Match(ctx)
 
-    # def match(self, other, ctx=None):
-    #     if not hasattr(other, '__iter__'):
-    #         return None
-    #     if self.head_pattern:
-    #         match = self.head_pattern.match(other[0], ctx)
-    #         if not match:
-    #             return None
-    #         ctx = match.ctx
-    #         if self.tail_pattern:
-    #             match = self.tail_pattern.match(other[1:], ctx)
-    #             if not match:
-    #                 return None
-    #             ctx = match.ctx
-    #     # repeated code, TODO figure out something better
-    #     if self.bound_name:
-    #         if ctx is None:
-    #             ctx = {}
-    #         try:
-    #             previous = ctx[self.bound_name]
-    #             if previous != other:
-    #                 return None
-    #         except KeyError:
-    #             ctx[self.bound_name] = other
-    #     # end repeated code
-    #     return Match(ctx)
-
 class CasePattern(Pattern):
     def __init__(self, casecls, *initpatterns):
         super(CasePattern, self).__init__()
@@ -202,25 +174,12 @@ class CasePattern(Pattern):
         else:
             self.initargs_pattern = build(*initpatterns, **dict(is_list=True))
 
-    def match(self, other, ctx=None):
-        if not self.casecls_pattern.match(other, ctx):
-            return None
-        match = self.initargs_pattern.match(other._case_args, ctx)
+    def _does_match(self, other, ctx):
+        match = self.casecls_pattern.match(other, ctx)
         if not match:
             return None
-        # repeated code, TODO figure out something better
         ctx = match.ctx
-        if self.bound_name:
-            if ctx is None:
-                ctx = {}
-            try:
-                previous = ctx[self.bound_name]
-                if previous != other:
-                    return None
-            except KeyError:
-                ctx[self.bound_name] = other
-        # end repeated code
-        return Match(ctx)
+        return self.initargs_pattern.match(other._case_args, ctx)
 
 class OrPattern(Pattern):
     def __init__(self, *patterns):
@@ -229,7 +188,7 @@ class OrPattern(Pattern):
         super(OrPattern, self).__init__()
         self.patterns = patterns
 
-    def match(self, other, ctx=None):
+    def _does_match(self, other, ctx):
         for pattern in self.patterns:
             if ctx is not None:
                 ctx_ = ctx.copy()
@@ -237,19 +196,7 @@ class OrPattern(Pattern):
                 ctx_ = None
             match = pattern.match(other, ctx_)
             if match:
-                # repeated code, TODO figure out something better
-                ctx = match.ctx
-                if self.bound_name:
-                    if ctx is None:
-                        ctx = {}
-                    try:
-                        previous = ctx[self.bound_name]
-                        if previous != other:
-                            return None
-                    except KeyError:
-                        ctx[self.bound_name] = other
-                # end repeated code
-                return Match(ctx)
+                return match
         return None
 
 def build(*args, **kwargs):
