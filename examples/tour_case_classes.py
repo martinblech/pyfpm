@@ -30,7 +30,7 @@ x = Var('x')
 print(x.name)
 
 print('-'*80)
-printTerm = M(
+printTerm = M([
         (_(Var(_(str)%'n')), lambda n: (
             print(n, end='')
             )),
@@ -45,11 +45,11 @@ printTerm = M(
             printTerm(v),
             print(')', end='')
             )),
-        )
-isIdentityFun = M(
+        ])
+isIdentityFun = M([
         (_(Fun(_()%'x', Var(_()%'y'))), lambda x, y: x==y),
         (_(), lambda: False),
-        )
+        ])
 id = Fun('x', Var('x'))
 t = Fun('x', Fun('y', App(Var('x'), Var('y'))))
 printTerm(t)
