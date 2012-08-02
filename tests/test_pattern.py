@@ -37,6 +37,16 @@ class TestInstance(unittest.TestCase):
     def test_not_match_different_type(self):
         self.assertFalse(_iof(int)%'x'<<'abc')
 
+_regex = pattern.RegexPattern
+class TestRegex(unittest.TestCase):
+    def test_match_simple(self):
+        self.assertEquals(_regex('\d+.*')%'x' << '123abc',
+                _m({'x': '123abc'}))
+
+    def test_match_groups(self):
+        self.assertEquals(_regex('(\d+)(.*)')%'x' << '123abc',
+                _m({'x': ('123', 'abc')}))
+
 _l = pattern.ListPattern
 class TestList(unittest.TestCase):
     def test_match_empty_list(self):

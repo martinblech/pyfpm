@@ -1,10 +1,16 @@
 import re
 
+try:
+    _basestring = basestring
+except NameError:
+    _basestring = str
+
 class Match(object):
-    def __init__(self, ctx=None):
+    def __init__(self, ctx=None, value=None):
         if ctx is None:
             ctx = {}
         self.ctx = ctx
+        self.value = value
     def __eq__(self, other):
         return isinstance(other, Match) and other.ctx == self.ctx
     def __repr__(self):
@@ -19,15 +25,16 @@ class Pattern(object):
         match = self._does_match(other, ctx)
         if match:
             ctx = match.ctx
+            value = match.value or other
             if self.bound_name:
                 if ctx is None:
                     ctx = {}
                 try:
                     previous = ctx[self.bound_name]
-                    if previous != other:
+                    if previous != value:
                         return None
                 except KeyError:
-                    ctx[self.bound_name] = other
+                    ctx[self.bound_name] = value
             if self.condition is None or self.condition(**ctx):
                 return Match(ctx)
         return None
@@ -111,17 +118,16 @@ class InstanceOfPattern(Pattern):
 
 class RegexPattern(Pattern):
     def __init__(self, regex):
-        raise ValueError('not ready yet')
         super(RegexPattern, self).__init__()
-        if not isinstance(regex, re.RegexObject):
+        if isinstance(regex, _basestring):
             regex = re.compile(regex)
         self.regex = regex
-    # TODO: finish this, must improve Pattern._do_match
 
-try:
-    _basestring = basestring
-except NameError:
-    _basestring = str
+    def _does_match(self, other, ctx):
+        re_match = self.regex.match(other)
+        if re_match:
+            return Match(ctx, re_match.groups())
+        return None
 
 class ListPattern(Pattern):
     def __init__(self, head_pattern=None, tail_pattern=None):
