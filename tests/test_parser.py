@@ -1,3 +1,4 @@
+import re
 import unittest
 
 from pyfpm import parser, build as _
@@ -93,6 +94,11 @@ class TestParser(unittest.TestCase):
     def test_str_constant(self):
         self.assertEquals(self.parse('"abc"'), _('abc'))
         self.assertEquals(self.parse("'abc'"), _('abc'))
+
+    def test_regex_constant(self):
+        self.assertEquals(self.parse('/abc/'), _(re.compile('abc')))
+        self.assertEquals(self.parse(r'/\//'), _(re.compile('/')))
+        self.assertEquals(self.parse(r'/\\/'), _(re.compile(r'\\')))
 
     def test_head_tail(self):
         self.assertEquals(self.parse('head :: tail'), _()%'head' + _()%'tail')

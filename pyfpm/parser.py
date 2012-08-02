@@ -1,7 +1,8 @@
+import re
 import inspect
 
 from pyparsing import Literal, Word, Group, Combine, Suppress,\
-        Forward, Optional, alphas, nums, alphanums,\
+        Forward, Optional, alphas, nums, alphanums, QuotedString,\
         quotedString, dblQuotedString, removeQuotes, delimitedList,\
         ParseException, Keyword, restOfLine, ParseFatalException
 
@@ -78,12 +79,16 @@ def Parser(context=None):
     str_const = (quotedString | dblQuotedString)('str_const').setParseAction(
             removeQuotes)
 
+    regex_const = QuotedString(quoteChar='/', escChar='\\')('regex_const'
+            ).setParseAction(lambda *args: re.compile(args[-1].regex_const))
+
     true = Keyword('True').setParseAction(lambda *args: _(True))
     false = Keyword('False').setParseAction(lambda *args: _(False))
     null = Keyword('None').setParseAction(lambda *args: _(None))
 
-    const = (float_const | int_const | str_const | true | false | null)(
-            'const').setParseAction(lambda *args: _(args[-1].const))
+    const = (float_const | int_const | str_const | regex_const |
+            false | true | null)('const').setParseAction(
+                    lambda *args: _(args[-1].const))
 
     scalar = Forward()
 
