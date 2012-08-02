@@ -116,10 +116,11 @@ class InstanceOfPattern(Pattern):
         else:
             return None
 
+_CompiledRegex = type(re.compile(''))
 class RegexPattern(Pattern):
     def __init__(self, regex):
         super(RegexPattern, self).__init__()
-        if isinstance(regex, _basestring):
+        if not isinstance(regex, _CompiledRegex):
             regex = re.compile(regex)
         self.regex = regex
 
@@ -217,6 +218,8 @@ def build(*args, **kwargs):
         return ListPattern(build(arg))
     if isinstance(arg, Pattern):
         return arg
+    if isinstance(arg, _CompiledRegex):
+        return RegexPattern(arg)
     if isinstance(arg, tuple) and hasattr(arg, '_fields'):
         return CasePattern(arg.__class__, *map(build, arg))
     if isinstance(arg, type):

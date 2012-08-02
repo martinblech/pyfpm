@@ -1,3 +1,4 @@
+import re
 import unittest
 
 from pyfpm import pattern
@@ -139,6 +140,9 @@ class TestPBuilder(unittest.TestCase):
 
     def test_list(self):
         self.assertEquals(_(1, str), _l(_(1), _l(_(str))))
+
+    def test_regex(self):
+        self.assertEquals(_(re.compile('abc')), _regex('abc'))
 
 class TestOperators(unittest.TestCase):
     def test_mul(self):
