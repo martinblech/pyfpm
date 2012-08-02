@@ -140,4 +140,5 @@ def Parser(context=None):
         return p
 
     parse.context = context
+    parse.setDebug = pattern.setDebug
     return parse
