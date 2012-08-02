@@ -179,7 +179,7 @@ class CasePattern(Pattern):
         if not match:
             return None
         ctx = match.ctx
-        return self.initargs_pattern.match(other._case_args, ctx)
+        return self.initargs_pattern.match(other, ctx)
 
 class OrPattern(Pattern):
     def __init__(self, *patterns):
@@ -211,9 +211,8 @@ def build(*args, **kwargs):
         return ListPattern(build(arg))
     if isinstance(arg, Pattern):
         return arg
-    if hasattr(arg, '__dict__') and '_case_args' in arg.__dict__:
-        return CasePattern(arg.__class__,
-                *map(build, arg._case_args))
+    if isinstance(arg, tuple) and hasattr(arg, '_fields'):
+        return CasePattern(arg.__class__, *map(build, arg))
     if isinstance(arg, type):
         return InstanceOfPattern(arg)
     if isinstance(arg, (tuple, list)):

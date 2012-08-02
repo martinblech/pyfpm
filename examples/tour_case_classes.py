@@ -3,22 +3,13 @@
 Loose port of the examples at `A Tour of Scala: Case Classes <http://www.scala-lang.org/node/107>`_
 """
 from __future__ import print_function
+from collections import namedtuple
 
 from pyfpm import MatchFunction, handler
-from pyfpm import Case
 
-class Term(Case): pass
-class Var(Term):
-    def __init__(self, name):
-        self.name = name
-class Fun(Term):
-    def __init__(self, arg, body):
-        self.arg = arg
-        self.body = body
-class App(Term):
-    def __init__(self, f, v):
-        self.f = f
-        self.v = v
+Var = namedtuple('Var', 'name')
+Fun = namedtuple('Fun', 'arg, body')
+App = namedtuple('Term', 'f, v')
 
 print('-'*80)
 example = Fun('x', Fun('y', App(Var('x'), Var('y'))))
@@ -34,12 +25,12 @@ class printTerm(MatchFunction):
     def var(n):
         print(n, end='')
 
-    @handler('Fun(x:str, b:Term)')
+    @handler('Fun(x:str, b)')
     def fun(x, b):
         print('^' + x + '.', end='')
         printTerm(b)
 
-    @handler('App(f:Term, v:Term)')
+    @handler('App(f, v)')
     def app(f, v):
         print('(', end='')
         printTerm(f)

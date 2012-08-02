@@ -1,7 +1,7 @@
 import inspect
 
-from pyparsing import Literal, Word, Group, Combine, Suppress, OneOrMore,\
-        Forward, Optional, alphas, nums, alphanums, stringEnd, oneOf,\
+from pyparsing import Literal, Word, Group, Combine, Suppress,\
+        Forward, Optional, alphas, nums, alphanums,\
         quotedString, dblQuotedString, removeQuotes, delimitedList,\
         ParseException, Keyword, restOfLine, ParseFatalException
 

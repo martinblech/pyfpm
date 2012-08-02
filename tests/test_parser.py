@@ -1,10 +1,15 @@
 import unittest
 
-from pyfpm import parser, caseclass, build as _
+from pyfpm import parser, build as _
 
-class Case0(caseclass.Case): pass
-class Case3(caseclass.Case):
-    def __init__(self, a, b, c): pass
+_has_named_tuple = False
+try:
+    from collections import namedtuple
+    _has_named_tuple = True
+    Case3 = namedtuple('Case3', 'a b c')
+    Case0 = namedtuple('Case0', '')
+except ImportError:
+    pass
 
 class TestParser(unittest.TestCase):
     def setUp(self):
@@ -44,7 +49,7 @@ class TestParser(unittest.TestCase):
     def test_named_var_clash(self):
         for expr in ('str', 'object:str'):
             try:
-                pattern = self.parse(expr)
+                self.parse(expr)
                 self.fail()
             except parser.ParseException:
                 pass
@@ -112,9 +117,10 @@ class TestParser(unittest.TestCase):
         self.assertEquals(self.parse('[x | y]'), _([_()%'x' | _()%'y']))
         self.assertEquals(self.parse('[(x | y)]'), _([_()%'x' | _()%'y']))
 
-    def test_case_classes(self):
-        self.assertEquals(self.parse('Case3(1, 2, 3)'), _(Case3(1, 2, 3)))
-        self.assertEquals(self.parse('Case0()'), _(Case0()))
+    if _has_named_tuple:
+        def test_case_classes(self):
+            self.assertEquals(self.parse('Case3(1, 2, 3)'), _(Case3(1, 2, 3)))
+            self.assertEquals(self.parse('Case0()'), _(Case0()))
 
     def test_conditional_pattern(self):
         p = self.parse('_ if False')

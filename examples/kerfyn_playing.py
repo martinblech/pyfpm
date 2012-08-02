@@ -5,9 +5,7 @@ pattern matching
 """
 from __future__ import print_function
 
-from pyfpm import Matcher as M, NoMatch, MatchFunction, handler
-from pyfpm import build as _
-from pyfpm import Case
+from pyfpm import Matcher as M, MatchFunction, handler
 
 # Traditional approach
 print('-'*80)
@@ -101,32 +99,12 @@ for x in (('-l', 'eng'),
 # Advanced pattern matching: case class
 
 print('-'*80)
-class Expression(Case): pass
-class X(Expression):
-    def __str__(self):
-        return 'x'
-class Const(Expression):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return str(self.value)
-class Add(Expression):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-    def __str__(self):
-        return '(' + str(self.left) + ' + ' + str(self.right) + ')'
-class Mult(Expression):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-    def __str__(self):
-        return '(' + str(self.left) + ' * ' + str(self.right) + ')'
-class Neg(Expression):
-    def __init__(self, expr):
-        self.expr = expr
-    def __str__(self):
-        return '-' + str(self.expr)
+from collections import namedtuple
+X = namedtuple('X', [])
+Const = namedtuple('Const', 'value')
+Add = namedtuple('Add', 'left, right')
+Mult = namedtuple('Mult', 'left, right')
+Neg = namedtuple('Neg', 'expression')
 
 eval = M([
         ('X()',

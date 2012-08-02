@@ -1,7 +1,6 @@
 import unittest
 
 from pyfpm import pattern
-from pyfpm import Case
 
 _m = pattern.Match
 
@@ -62,25 +61,35 @@ class TestList(unittest.TestCase):
 
     # TODO: more tests
 
-_c = pattern.CasePattern
-class MyCase(Case):
-    def __init__(self, *args): pass
+_has_named_tuple = False
+try:
+    from collections import namedtuple
+    _has_named_tuple = True
+    Case0 = namedtuple('Case0', '')
+    Case1 = namedtuple('Case1', 'a')
+    Case3 = namedtuple('Case3', 'a b c')
+    Case4 = namedtuple('Case4', 'a b c d')
+except ImportError:
+    pass
 
-class TestCasePattern(unittest.TestCase):
-    def test_match_single_arg(self):
-        self.assertEquals(_c(MyCase, _eq(1)%'x')<<MyCase(1), _m({'x': 1}))
+if _has_named_tuple:
+    _c = pattern.CasePattern
 
-    def test_match_multiple_args(self):
-        self.assertEquals(_c(MyCase, _eq(1)%'x' + _any()%'y')<<
-                                                MyCase(1, 'a', 'b', 'c'),
-                _m({'x': 1, 'y': ('a', 'b', 'c')}))
+    class TestCasePattern(unittest.TestCase):
+        def test_match_single_arg(self):
+            self.assertEquals(_c(Case1, _eq(1)%'x')<<Case1(1), _m({'x': 1}))
 
-    def test_match_head_tail(self):
-        self.assertEquals(_c(MyCase, _any()%'head' + _any()%'tail')%'x'<<
-                                                MyCase(1, 2, 3),
-                        _m({'head': 1, 'tail': (2, 3), 'x': MyCase(1, 2, 3)}))
+        def test_match_multiple_args(self):
+            self.assertEquals(_c(Case4, _eq(1)%'x' + _any()%'y')<<
+                                                    Case4(1, 'a', 'b', 'c'),
+                    _m({'x': 1, 'y': ('a', 'b', 'c')}))
 
-    # TODO: more tests
+        def test_match_head_tail(self):
+            self.assertEquals(_c(Case3, _any()%'head' + _any()%'tail')%'x'<<
+                                                    Case3(1, 2, 3),
+                            _m({'head': 1, 'tail': (2, 3), 'x': Case3(1, 2, 3)}))
+
+        # TODO: more tests
 
 _or = pattern.OrPattern
 class TestOr(unittest.TestCase):
@@ -105,9 +114,9 @@ class TestPBuilder(unittest.TestCase):
     def test_class(self):
         self.assertEquals(_(str), _iof(str))
 
-    def test_case(self):
-        class MyCase(Case): pass
-        self.assertEquals(_(MyCase()), _c(MyCase))
+    if _has_named_tuple:
+        def test_case(self):
+            self.assertEquals(_(Case0()), _c(Case0))
 
     def test_pattern(self):
         self.assertEquals(_(_()), _())
