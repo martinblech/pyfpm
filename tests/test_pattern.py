@@ -44,9 +44,17 @@ class TestRegex(unittest.TestCase):
         self.assertEquals(_regex('\d+.*')%'x' << '123abc',
                 _m({'x': '123abc'}))
 
+    def test_match_single_group(self):
+        self.assertEquals(_regex('(\d+.*)')%'x' << '123abc',
+                _m({'x': ('123abc',)}))
+
     def test_match_groups(self):
         self.assertEquals(_regex('(\d+)(.*)')%'x' << '123abc',
                 _m({'x': ('123', 'abc')}))
+
+    def test_match_nested_groups(self):
+        self.assertEquals(_regex('((\d+)(.*))')%'x' << '123abc',
+                _m({'x': ('123abc', '123', 'abc')}))
 
 _l = pattern.ListPattern
 class TestList(unittest.TestCase):
