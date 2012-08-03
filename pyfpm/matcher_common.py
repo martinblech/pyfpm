@@ -1,5 +1,4 @@
 import sys
-import inspect
 from functools import wraps
 
 from pyfpm.parser import Parser, _get_caller_globals
