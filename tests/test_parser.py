@@ -1,7 +1,8 @@
 import re
 import unittest
 
-from pyfpm import parser, build as _
+from pyfpm import parser
+from pyfpm.pattern import build as _
 
 _has_named_tuple = False
 try:

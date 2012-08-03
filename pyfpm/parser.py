@@ -6,7 +6,7 @@ from pyparsing import Literal, Word, Group, Combine, Suppress,\
         quotedString, dblQuotedString, removeQuotes, delimitedList,\
         ParseException, Keyword, restOfLine, ParseFatalException
 
-from pyfpm import build as _
+from pyfpm.pattern import build as _
 
 def _get_caller_globals():
     frame = inspect.getouterframes(inspect.currentframe())[2][0]

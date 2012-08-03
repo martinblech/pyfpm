@@ -5,7 +5,7 @@ pattern matching
 """
 from __future__ import print_function
 
-from pyfpm import Matcher
+from pyfpm.matcher import Matcher
 
 # Traditional approach
 print('-'*80)

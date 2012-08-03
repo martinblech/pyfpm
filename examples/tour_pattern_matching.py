@@ -4,10 +4,10 @@ Loose port of the examples at `A Tour of Scala: Pattern Matching <http://www.sca
 """
 from __future__ import print_function
 
-from pyfpm import Matcher as M
+from pyfpm.matcher import Matcher
 
 print('-'*80)
-matchTest = M([
+matchTest = Matcher([
         ('1', lambda: 'one'),
         ('2', lambda: 'two'),
         ('_', lambda: 'many')
@@ -17,7 +17,7 @@ print(matchTest(2))
 print(matchTest(3))
 
 print('-'*80)
-matchTest = M([
+matchTest = Matcher([
         ('1', lambda: 'one'),
         ('"two"', lambda: 2),
         ('y:int', lambda y: 'scala.Int')

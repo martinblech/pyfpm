@@ -5,7 +5,7 @@ Loose port of the examples at `A Tour of Scala: Case Classes <http://www.scala-l
 from __future__ import print_function
 from collections import namedtuple
 
-from pyfpm import Matcher
+from pyfpm.matcher import Matcher
 
 Var = namedtuple('Var', 'name')
 Fun = namedtuple('Fun', 'arg, body')
