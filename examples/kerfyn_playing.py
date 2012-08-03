@@ -5,11 +5,11 @@ pattern matching
 """
 from __future__ import print_function
 
-from pyfpm import Matcher as M, MatchFunction, handler
+from pyfpm import Matcher
 
 # Traditional approach
 print('-'*80)
-toYesOrNo = M([
+toYesOrNo = Matcher([
         ('1', lambda: 'yes'),
         ('0', lambda: 'no'),
         ('_', lambda: 'error'),
@@ -18,7 +18,7 @@ for x in (0, 1, 2):
     print(toYesOrNo(x))
 
 print('-'*80)
-toYesOrNo = M([
+toYesOrNo = Matcher([
         ('1 | 2 | 3', lambda: 'yes'),
         ('0', lambda: 'no'),
         ('_', lambda: 'error'),
@@ -33,7 +33,7 @@ def displayVersion():
     print('V1.0')
 def unknownArgument(whatever):
     print('unknown argument: %s' % whatever)
-parseArgument = M([
+parseArgument = Matcher([
         ('"-h" | "--help"', displayHelp),
         ('"-v" | "--version"', displayVersion),
         ('whatever', unknownArgument),
@@ -43,7 +43,7 @@ for x in ('-h', '--help', '-v', '--version', '-f', '--fdsa'):
 
 # Typed Pattern
 print('-'*80)
-f = M([
+f = Matcher([
         ('i:int', lambda i: 'integer: %s' % i),
         ('_:float', lambda: 'a float'),
         ('s:str', lambda s: 'I want to say ' + s),
@@ -53,7 +53,7 @@ for x in (1, 1.0, 'hello'):
 
 # Functional approach to pattern matching
 print('-'*80)
-fact = M([
+fact = Matcher([
         ('0', lambda: 1),
         ('n:int', lambda n: n * fact(n - 1)),
         ])
@@ -62,7 +62,7 @@ for x in range(10):
 
 # Pattern matching and collection: the look-alike approach
 print('-'*80)
-length = M([
+length = Matcher([
         ('_ :: tail', lambda tail: 1 + length(tail)),
         ('[]', lambda: 0)
         ])
@@ -80,7 +80,7 @@ def displayHelp():
     print('help!')
 def badArgument(bad):
     print('bad argument:', bad)
-parseArgument = M([
+parseArgument = Matcher([
         ('["-l", lang]', setLanguageTo),
         ('["-o" | "--optim", n:int] if 0 < n <= 5', setOptimizationLevel),
         ('["-o" | "--optim", badLevel]', badOptimizationLevel),
@@ -106,7 +106,7 @@ Add = namedtuple('Add', 'left, right')
 Mult = namedtuple('Mult', 'left, right')
 Neg = namedtuple('Neg', 'expression')
 
-eval = M([
+eval = Matcher([
         ('X()',
             lambda xValue: xValue),
         ('Const(cst)',
@@ -125,7 +125,7 @@ result = eval(expr, 3)
 print('f(3):', result)
 assert result == 19
 
-deriv = M([
+deriv = Matcher([
         ('X()', lambda: Const(1)),
         ('Const(_)', lambda: Const(0)),
         ('Add(left, right)',
@@ -142,58 +142,46 @@ result = eval(df, 3)
 print('df(3):', result)
 assert result == 12
 
-class _simplify(MatchFunction):
-    @handler('Mult(Const(x), Const(y))')
-    def mult_consts(x, y):
-        return Const(x * y)
-
-    @handler('Add(Const(x), Const(y))')
-    def add_consts(x, y):
-        return Const(x + y)
-
-    @handler('Mult(Const(0), _)')
-    def mult_zero_left():
-        return Const(0)
-
-    @handler('Mult(_, Const(0))')
-    def mult_zero_right():
-        return Const(0)
-
-    @handler('Mult(Const(1), expr)')
-    def mult_one_left(expr):
-        return simplify(expr)
-
-    @handler('Mult(expr, Const(1))')
-    def mult_one_right(expr):
-        return simplify(expr)
-
-    @handler('Add(Const(0), expr)')
-    def add_zero_left(expr):
-        return simplify(expr)
-
-    @handler('Add(expr, Const(0))')
-    def add_zero_right(expr):
-        return simplify(expr)
-
-    @handler('Neg(Neg(expr))')
-    def double_negation(expr):
-        return simplify(expr)
-
-    @handler('Add(left, right)')
-    def normal_add(left, right):
-        return Add(simplify(left), simplify(right))
-
-    @handler('Mult(left, right)')
-    def normal_mult(left, right):
-        return Mult(simplify(left), simplify(right))
-
-    @handler('Neg(expr)')
-    def normal_negation(expr):
-        return simplify(expr)
-
-    @handler('expr')
-    def no_can_do(expr):
-        return expr
+_simplify = Matcher()
+@_simplify.handler('Mult(Const(x), Const(y))')
+def _mult_consts(x, y):
+    return Const(x * y)
+@_simplify.handler('Add(Const(x), Const(y))')
+def _add_consts(x, y):
+    return Const(x + y)
+@_simplify.handler('Mult(Const(0), _)')
+def _mult_zero_left():
+    return Const(0)
+@_simplify.handler('Mult(_, Const(0))')
+def _mult_zero_right():
+    return Const(0)
+@_simplify.handler('Mult(Const(1), expr)')
+def _mult_one_left(expr):
+    return simplify(expr)
+@_simplify.handler('Mult(expr, Const(1))')
+def _mult_one_right(expr):
+    return simplify(expr)
+@_simplify.handler('Add(Const(0), expr)')
+def _add_zero_left(expr):
+    return simplify(expr)
+@_simplify.handler('Add(expr, Const(0))')
+def _add_zero_right(expr):
+    return simplify(expr)
+@_simplify.handler('Neg(Neg(expr))')
+def _double_negation(expr):
+    return simplify(expr)
+@_simplify.handler('Add(left, right)')
+def _normal_add(left, right):
+    return Add(simplify(left), simplify(right))
+@_simplify.handler('Mult(left, right)')
+def _normal_mult(left, right):
+    return Mult(simplify(left), simplify(right))
+@_simplify.handler('Neg(expr)')
+def _normal_negation(expr):
+    return simplify(expr)
+@_simplify.handler('expr')
+def _no_can_do(expr):
+    return expr
 
 def simplify(expr):
     while True:

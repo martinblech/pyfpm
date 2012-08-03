@@ -1,2 +1,2 @@
 from pyfpm.pattern import build
-from pyfpm.matcher import Matcher, MatchFunction, handler, NoMatch, match_args
+from pyfpm.matcher import Matcher, NoMatch, match_args

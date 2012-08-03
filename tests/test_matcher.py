@@ -1,7 +1,6 @@
 import unittest
 
-from pyfpm.matcher import Matcher, NoMatch, MatchFunction, handler,\
-        match_args, Unpacker
+from pyfpm.matcher import Matcher, NoMatch, match_args, Unpacker
 from pyfpm.pattern import build as _
 
 class TestMatcher(unittest.TestCase):
@@ -68,60 +67,6 @@ class TestMatcher(unittest.TestCase):
     def test_autoparse_context(self):
         m = Matcher([('y:TestMatcher', lambda y: self.assertEquals(self, y))])
         self.assertEquals(m.bindings[0][0], _(TestMatcher)%'y')
-        m(self)
-
-class TestMatchFunction(unittest.TestCase):
-    def test_simplematch(self):
-        class m(MatchFunction): pass
-        try:
-            m(None)
-            self.fail('should fail with NoMatch')
-        except NoMatch:
-            pass
-
-    def test_varbind(self):
-        class m(MatchFunction):
-            @handler(_()%'x')
-            def any(x):
-                return 'x=%s' % x
-        self.assertEquals(m(None), 'x=None')
-        self.assertEquals(m(1), 'x=1')
-
-    def test_handler_priority(self):
-        class m(MatchFunction):
-            @handler(_(1))
-            def one(): return 'my precious, the one'
-            @handler(_(int))
-            def int(): return 'just an int'
-            @handler(_())
-            def any(): return 'just an object? whatever'
-            @handler(_(str))
-            def str(): return 'i wish i could find a string'
-        self.assertNotEquals(m('hi'), 'i wish i could find a string')
-        self.assertEquals(m(None), 'just an object? whatever')
-        self.assertEquals(m(3), 'just an int')
-        self.assertEquals(m(1), 'my precious, the one')
-
-    def test_extraargs(self):
-        class m(MatchFunction):
-            @handler(_()%'x')
-            def any(*args, **kwargs):
-                return (args, kwargs)
-        self.assertEquals(m(None), ((), {'x': None}))
-        self.assertEquals(m(1, 'abc', None), ((1, 'abc'), {'x': None}))
-
-    def test_autoparse(self):
-        class m(MatchFunction):
-            @handler('_')
-            def any(): pass
-        self.assertEquals(m._matcher.bindings[0][0], _())
-
-    def test_autoparse_context(self):
-        class m(MatchFunction):
-            @handler('x:TestMatchFunction')
-            def f(x):
-                self.assertEquals(x, self)
-        self.assertEquals(m._matcher.bindings[0][0], _(TestMatchFunction)%'x')
         m(self)
 
 class TestMatchArgsDecorator(unittest.TestCase):
