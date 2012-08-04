@@ -67,6 +67,12 @@ class TestList(unittest.TestCase):
     def test_match_multiple_items(self):
         self.assertEquals(_l(_eq(1)%'x', _l(_iof(str)%'y'))<<(1, 'a'),
                 _m({'x': 1, 'y': 'a'}))
+        self.assertEquals(_l(_eq(1)%'x', _l(_iof(str)%'y', _l(_any()%'z')))<<(
+            1, 'a', None),
+            _m({'x': 1, 'y': 'a', 'z': None}))
+
+    def test_no_match_extra_items(self):
+        self.assertFalse(_l(_eq(1)%'x', _l(_iof(str)%'y'))<<(1, 'a', None))
 
     def test_match_head_tail(self):
         self.assertEquals(_l(_any()%'head', _any()%'tail')<<(1, 2, 3),
@@ -147,6 +153,7 @@ class TestPBuilder(unittest.TestCase):
         self.assertEquals(_([]), _l())
 
     def test_list(self):
+        self.assertEquals(_([1]), _l(_(1)))
         self.assertEquals(_(1, str), _l(_(1), _l(_(str))))
 
     def test_regex(self):

@@ -1,3 +1,6 @@
+"""
+Scala-like pattern syntax parser.
+"""
 import re
 import inspect
 
@@ -12,7 +15,7 @@ def _get_caller_globals():
     frame = inspect.getouterframes(inspect.currentframe())[2][0]
     return frame.f_globals
 
-class IfCondition(object):
+class _IfCondition(object):
     def __init__(self, code, context):
         self.code = code
         self.context = context
@@ -21,15 +24,94 @@ class IfCondition(object):
         return eval(self.code, self.context, kwargs)
 
     def __eq__(self, other):
-        return (isinstance(other, IfCondition) and
+        return (isinstance(other, _IfCondition) and
                 self.__dict__ == other.__dict__)
     
     def __str__(self):
-        return 'IfCondition(code=%s, context=%s)' % (
+        return '_IfCondition(code=%s, context=%s)' % (
                 self.code,
                 self.context)
 
 def Parser(context=None):
+    """
+    Create a parser. Usage and syntax examples:
+
+        >>> parser = Parser()
+
+    match anything anonymously:
+
+        >>> parser('_') << 'whatever'
+        Match({})
+
+    match anything and bind to a name:
+
+        >>> parser('x') << 1
+        Match({'x': 1})
+
+    match instances of a specific type:
+
+        >>> parser('_:str') << 1
+        >>> parser('_:int') << 1
+        Match({})
+        >>> parser('x:str') << 'abc'
+        Match({'x': 'abc'})
+
+    match int, float, str and bool constants:
+
+        >>> parser('1') << 1
+        Match({})
+        >>> parser('1.618') << 1.618
+        Match({})
+        >>> parser('"abc"') << 'abc'
+        Match({})
+        >>> parser('True') << True
+        Match({})
+
+    match lists:
+
+        >>> parser('[]') << ()
+        Match({})
+        >>> parser('[x:int]') << [1]
+        Match({'x': 1})
+        >>> parser('[a, b, _]') << [1, 2, 3]
+        Match({'a': 1, 'b': 2})
+
+    split head vs. tail:
+
+        >>> parser('a::b') << (1, 2, 3)
+        Match({'a': 1, 'b': (2, 3)})
+        >>> parser('a::b::c') << (0, 1, 2, 3, 4)
+        Match({'a': 0, 'c': (2, 3, 4), 'b': 1})
+
+    match named tuples (as if they were Scala case classes)
+
+        >>> from collections import namedtuple
+        >>> Case3 = namedtuple('Case3', 'a b c')
+        >>> parser = Parser() # Case3 has to be in the context
+        >>> parser('Case3(x, y, z)') << Case3(1, 2, 3)
+        Match({'y': 2, 'x': 1, 'z': 3})
+
+    boolean or between expressions:
+
+        >>> parser('a:int|b:str') << 1
+        Match({'a': 1})
+        >>> parser('a:int|b:str') << 'hello'
+        Match({'b': 'hello'})
+
+    nest expressions:
+
+        >>> parser('[[[x:int]]]') << [[[1]]]
+        Match({'x': 1})
+        >>> parser('[_:int|[], 2, 3]') << (1, 2, 3)
+        Match({})
+        >>> parser('[_:int|[], 2, 3]') << ([], 2, 3)
+        Match({})
+        >>> parser('[_:int|[], 2, 3]') << ([1], 2, 3)
+
+    :param context: dict -- optional context, defaults to the caller's
+        `globals()`
+
+    """
     if context is None:
         context = _get_caller_globals()
 
@@ -124,7 +206,7 @@ def Parser(context=None):
             pattern, condition_string = args[-1]
             code = compile(condition_string.strip(),
                     '<pattern_condition>', 'eval')
-            pattern.if_(IfCondition(code, context))
+            pattern.if_(_IfCondition(code, context))
             return pattern
         except ValueError:
             pass

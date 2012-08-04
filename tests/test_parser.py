@@ -111,7 +111,7 @@ class TestParser(unittest.TestCase):
 
     def test_explicit_list(self):
         self.assertEquals(self.parse('[]'), _([]))
-        self.assertEquals(self.parse('[1]'), _([1]))
+        self.assertEquals(self.parse('[x:int]'), _([_(int)%'x']))
         self.assertEquals(self.parse('[_, x:int]'), _(_(), _(int)%'x'))
         self.assertEquals(self.parse('[_, []]'), _(_(), _([])))
         self.assertEquals(self.parse('[[]]'), _([_([])]))
@@ -158,4 +158,4 @@ class TestParser(unittest.TestCase):
         self.assertEquals(self.parse('x if x'), self.parse('x if x'))
         self.assertNotEquals(self.parse('x if not x'), self.parse('x if x'))
         self.assertTrue(str(self.parse('x if x').condition).startswith(
-            'IfCondition(code='))
+            '_IfCondition(code='))

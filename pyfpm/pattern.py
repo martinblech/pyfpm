@@ -1,18 +1,25 @@
 import re
 
 try:
+    # python 2.x base string
     _basestring = basestring
 except NameError:
+    # python 3.x base string
     _basestring = str
 
 class Match(object):
+    """
+    """
     def __init__(self, ctx=None, value=None):
         if ctx is None:
             ctx = {}
         self.ctx = ctx
         self.value = value
+
     def __eq__(self, other):
-        return isinstance(other, Match) and other.ctx == self.ctx
+        return (isinstance(other, Match) and
+                self.__dict__ == other.__dict__)
+
     def __repr__(self):
         return 'Match(%s)' % self.ctx
 
@@ -133,6 +140,8 @@ class RegexPattern(Pattern):
 class ListPattern(Pattern):
     def __init__(self, head_pattern=None, tail_pattern=None):
         super(ListPattern, self).__init__()
+        if head_pattern is not None and tail_pattern is None:
+            tail_pattern = ListPattern()
         self.head_pattern = head_pattern
         self.tail_pattern = tail_pattern
 
@@ -158,12 +167,11 @@ class ListPattern(Pattern):
             match = self.head_pattern.match(head, ctx)
             if match:
                 ctx = match.ctx
-                if self.tail_pattern is not None:
-                    match = self.tail_pattern.match(tail, ctx)
-                    if match:
-                        ctx = match.ctx
-                    else:
-                        return None
+                match = self.tail_pattern.match(tail, ctx)
+                if match:
+                    ctx = match.ctx
+                else:
+                    return None
             else:
                 return None
         else:
@@ -227,5 +235,5 @@ def build(*args, **kwargs):
     if isinstance(arg, (tuple, list)):
         if len(arg) == 0:
             return ListPattern()
-        return build(*arg)
+        return build(*arg, **(dict(is_list=True)))
     return EqualsPattern(arg)
