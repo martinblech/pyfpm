@@ -91,7 +91,7 @@ def Parser(context=None):
         ...     parser = Parser() # Case3 has to be in the context
         ...     parser('Case3(x, y, z)') << Case3(1, 2, 3)
         ... except ImportError:
-        ...     from pyfpm.matcher import Match
+        ...     from pyfpm.pattern import Match
         ...     Match({'y': 2, 'x': 1, 'z': 3}) # no namedtuple in python < 2.6
         Match({'y': 2, 'x': 1, 'z': 3})
 
