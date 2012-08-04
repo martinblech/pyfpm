@@ -98,9 +98,9 @@ except ImportError:
     pass
 
 if _has_named_tuple:
-    _c = pattern.CasePattern
+    _c = pattern.NamedTuplePattern
 
-    class TestCasePattern(unittest.TestCase):
+    class TestNamedTuplePattern(unittest.TestCase):
         def test_match_single_arg(self):
             self.assertEquals(_c(Case1, _eq(1)%'x')<<Case1(1), _m({'x': 1}))
 

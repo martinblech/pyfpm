@@ -179,9 +179,9 @@ class ListPattern(Pattern):
                 return None
         return Match(ctx)
 
-class CasePattern(Pattern):
+class NamedTuplePattern(Pattern):
     def __init__(self, casecls, *initpatterns):
-        super(CasePattern, self).__init__()
+        super(NamedTuplePattern, self).__init__()
         self.casecls_pattern = InstanceOfPattern(casecls)
         if (len(initpatterns) == 1 and
                 isinstance(initpatterns[0], ListPattern)):
@@ -229,7 +229,7 @@ def build(*args, **kwargs):
     if isinstance(arg, _CompiledRegex):
         return RegexPattern(arg)
     if isinstance(arg, tuple) and hasattr(arg, '_fields'):
-        return CasePattern(arg.__class__, *map(build, arg))
+        return NamedTuplePattern(arg.__class__, *map(build, arg))
     if isinstance(arg, type):
         return InstanceOfPattern(arg)
     if isinstance(arg, (tuple, list)):
