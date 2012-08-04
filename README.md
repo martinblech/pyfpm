@@ -3,6 +3,8 @@
 `pyfpm` stands for PYthon Functional Pattern Matching. It's been heavily
 inspired by the Pattern Matching and Case Classes implementation in Scala.
 
+Build status at [Travis CI](http://travis-ci.org/): [![Build Status](https://secure.travis-ci.org/martinblech/pyfpm.png)](http://travis-ci.org/martinblech/pyfpm)
+
 ## Usage
 
 With `pyfpm` you can unpack objects using the `Unpacker` class:
