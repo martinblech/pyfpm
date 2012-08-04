@@ -1,3 +1,11 @@
+"""
+This module holds the actual pattern implementations.
+
+End users should not normally have to deal with it, except for constructing
+patterns programatically without making use of the pattern syntax parser.
+
+"""
+
 import re
 
 try:
@@ -9,6 +17,10 @@ except NameError:
 
 class Match(object):
     """
+    Represents the result of matching successfully a pattern against an
+    object. The `ctx` attribute is a :class:`dict` that contains the value for
+    each bound name in the pattern, if any.
+
     """
     def __init__(self, ctx=None, value=None):
         if ctx is None:
@@ -24,11 +36,27 @@ class Match(object):
         return 'Match(%s)' % self.ctx
 
 class Pattern(object):
+    """
+    Base Pattern class. Abstracts the behavior common to all pattern types,
+    such as name bindings, conditionals and operator overloading for combining
+    several patterns.
+
+    """
+
     def __init__(self):
         self.bound_name = None
         self.condition = None
 
     def match(self, other, ctx=None):
+        """
+        Match this pattern against an object.
+
+        :param other: the object this pattern should be matched against.
+        :param ctx: dict -- optional context. If none, an empty one will be
+            automatically created.
+        :returns: a :class:`Match` if successful, `None` otherwise.
+
+        """
         match = self._does_match(other, ctx)
         if match:
             ctx = match.ctx
@@ -46,33 +74,67 @@ class Pattern(object):
                 return Match(ctx)
         return None
     def __lshift__(self, other):
+        """You can also use the `<<` operator instead of :method:`match`"""
         return self.match(other)
 
     def bind(self, name):
+        """Bind this pattern to the given name."""
         self.bound_name = name
         return self
     def __mod__(self, name):
+        """You can also bind to a name using the `%` operator."""
         return self.bind(name)
 
     def if_(self, condition):
+        """
+        Add a boolean condition to this pattern.
+
+        :param condition: function -- must accept the match context as keyword
+            arguments and return a boolean-ish value.
+
+        """
         self.condition = condition
         return self
     def __div__(self, condition):
+        """You can also add a boolean condition using the '/' operator."""
         return self.if_(condition)
     def __truediv__(self, condition):
+        """You can also add a boolean condition using the '/' operator."""
         return self.if_(condition)
 
-    def length(self):
-        return 1
+    def multiply(self, n):
+        """
+        Build a ListPattern that matches `n` instances of this pattern.
 
-    def set_length(self, length):
-        return build(*([self]*length))
+        Example:
+
+            >>> p = EqualsPattern(1).multiply(3)
+            >>> p.match((1, 1, 1))
+            Match({})
+
+        """
+        return build(*([self]*n))
     def __mul__(self, length):
-        return self.set_length(length)
+        """You can also multiply a pattern using the `*` operator."""
+        return self.multiply(length)
     def __rmul__(self, length):
-        return self.set_length(length)
+        """You can also multiply a pattern using the `*` operator."""
+        return self.multiply(length)
 
     def or_with(self, other):
+        """
+        Build a new pattern that matches this or the other pattern.
+
+        Example:
+
+            >>> p = EqualsPattern(1).or_with(InstanceOfPattern(str))
+            >>> p.match('hello')
+            Match({})
+            >>> p.match(1)
+            Match({})
+            >>> p.match(2)
+
+        """
         patterns = []
         for pattern in (self, other):
             if isinstance(pattern, OrPattern):
@@ -81,11 +143,25 @@ class Pattern(object):
                 patterns.append(pattern)
         return OrPattern(*patterns)
     def __or__(self, other):
+        """You can also or-join two patterns using the `|` operator."""
         return self.or_with(other)
 
     def head_tail_with(self, other):
+        """
+        Head-tail concatenate this pattern with the other. The lhs pattern will
+        be the head and the other will be the tail.
+
+        Example:
+
+            >>> p = InstanceOfPattern(int).head_tail_with(ListPattern())
+            >>> p.match([1])
+            Match({})
+            >>> p.match([1, 2])
+
+        """
         return ListPattern(self, other)
     def __add__(self, other):
+        """You can also head-tail concatenate using the `+` operator."""
         return self.head_tail_with(other)
 
     def __eq__(self, other):
@@ -98,10 +174,12 @@ class Pattern(object):
                     self.__dict__.items() if v))
 
 class AnyPattern(Pattern):
+    """Pattern that matches anything."""
     def _does_match(self, other, ctx):
         return Match(ctx)
 
 class EqualsPattern(Pattern):
+    """Pattern that only matches objects that equal the given object."""
     def __init__(self, obj):
         super(EqualsPattern, self).__init__()
         self.obj = obj
@@ -113,6 +191,7 @@ class EqualsPattern(Pattern):
             return None
 
 class InstanceOfPattern(Pattern):
+    """Pattern that only matches instances of the given class."""
     def __init__(self, cls):
         super(InstanceOfPattern, self).__init__()
         self.cls = cls
@@ -125,6 +204,7 @@ class InstanceOfPattern(Pattern):
 
 _CompiledRegex = type(re.compile(''))
 class RegexPattern(Pattern):
+    """Pattern that only matches strings that match the given regex."""
     def __init__(self, regex):
         super(RegexPattern, self).__init__()
         if not isinstance(regex, _CompiledRegex):
@@ -138,6 +218,8 @@ class RegexPattern(Pattern):
         return None
 
 class ListPattern(Pattern):
+    """Pattern that only matches iterables whose head matches `head_pattern` and
+    whose tail matches `tail_pattern`"""
     def __init__(self, head_pattern=None, tail_pattern=None):
         super(ListPattern, self).__init__()
         if head_pattern is not None and tail_pattern is None:
@@ -180,6 +262,8 @@ class ListPattern(Pattern):
         return Match(ctx)
 
 class NamedTuplePattern(Pattern):
+    """Pattern that only matches named tuples of the given class and whose
+    contents match the given patterns."""
     def __init__(self, casecls, *initpatterns):
         super(NamedTuplePattern, self).__init__()
         self.casecls_pattern = InstanceOfPattern(casecls)
@@ -197,6 +281,7 @@ class NamedTuplePattern(Pattern):
         return self.initargs_pattern.match(other, ctx)
 
 class OrPattern(Pattern):
+    """Pattern that matches whenever any of the inner patterns match."""
     def __init__(self, *patterns):
         if len(patterns) < 2:
             raise ValueError('need at least two patterns')
@@ -215,6 +300,39 @@ class OrPattern(Pattern):
         return None
 
 def build(*args, **kwargs):
+    """
+    Shorthand pattern factory.
+
+    Examples:
+
+        >>> build() == AnyPattern()
+        True
+        >>> build(1) == EqualsPattern(1)
+        True
+        >>> build('abc') == EqualsPattern('abc')
+        True
+        >>> build(str) == InstanceOfPattern(str)
+        True
+        >>> build(re.compile('.*')) == RegexPattern('.*')
+        True
+        >>> build(()) == build([]) == ListPattern()
+        True
+        >>> build([1]) == build((1,)) == ListPattern(EqualsPattern(1),
+        ...     ListPattern())
+        True
+        >>> build(int, str, 'a') == ListPattern(InstanceOfPattern(int),
+        ...     ListPattern(InstanceOfPattern(str),
+        ...         ListPattern(EqualsPattern('a'))))
+        True
+        >>> try:
+        ...     from collections import namedtuple
+        ...     MyTuple = namedtuple('MyTuple', 'a b c')
+        ...     build(MyTuple(1, 2, 3)) == NamedTuplePattern(MyTuple, 1, 2, 3)
+        ... except ImportError:
+        ...     True
+        True
+
+    """
     arglen = len(args)
     if arglen > 1:
         head, tail = args[0], args[1:]

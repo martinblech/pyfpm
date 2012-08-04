@@ -34,7 +34,9 @@ class _IfCondition(object):
 
 def Parser(context=None):
     """
-    Create a parser. Usage and syntax examples:
+    Create a parser. Warning: creating a parser is expensive!
+
+    Usage and syntax examples:
 
         >>> parser = Parser()
 
