@@ -87,7 +87,7 @@ def Parser(context=None):
 
         >>> from collections import namedtuple
         >>> Case3 = namedtuple('Case3', 'a b c')
-        >>> parser = Parser() # Case3 has to be in the context
+        >>> parser = Parser({'Case3': Case3}) # Case3 has to be in the context
         >>> parser('Case3(x, y, z)') << Case3(1, 2, 3)
         Match({'y': 2, 'x': 1, 'z': 3})
 
