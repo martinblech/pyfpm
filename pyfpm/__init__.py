@@ -1,1 +1,1 @@
-"""This module provides Scala-like functional pattern matching."""
+"""This module provides Scala-like functional pattern matching in Python."""
