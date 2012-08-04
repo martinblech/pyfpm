@@ -85,10 +85,13 @@ def Parser(context=None):
 
     match named tuples (as if they were Scala case classes)
 
-        >>> from collections import namedtuple
-        >>> Case3 = namedtuple('Case3', 'a b c')
-        >>> parser = Parser({'Case3': Case3}) # Case3 has to be in the context
-        >>> parser('Case3(x, y, z)') << Case3(1, 2, 3)
+        >>> try:
+        ...     from collections import namedtuple
+        ...     Case3 = namedtuple('Case3', 'a b c')
+        ...     parser = Parser() # Case3 has to be in the context
+        ...     parser('Case3(x, y, z)') << Case3(1, 2, 3)
+        ... except ImportError:
+        ...     pass # no namedtuple in python < 2.6
         Match({'y': 2, 'x': 1, 'z': 3})
 
     boolean or between expressions:
