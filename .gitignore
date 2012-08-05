@@ -34,3 +34,6 @@ nosetests.xml
 
 # Sphinx doc build
 _build
+
+# distutils MANIFEST
+MANIFEST
