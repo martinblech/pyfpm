@@ -66,4 +66,4 @@ parse_options(('-v', 'x'))      # "unknown options: ('-v', 'x')"
 ```
 
 For more information, see the files in the `examples` directory alongside the
-links within them, or read the API docs.
+links within them, or [read the docs](http://pyfpm.readthedocs.org/).
