@@ -9,7 +9,7 @@ syntax.
 --------------------
 
 .. automodule:: pyfpm.matcher
-  :members: Matcher, match_args, Unpacker, NoMatch
+  :members: Matcher, match_args, Unpacker
 
 :mod:`pyfpm.parser`
 -------------------
