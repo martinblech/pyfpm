@@ -67,3 +67,11 @@ parse_options(('-v', 'x'))      # "unknown options: ('-v', 'x')"
 
 For more information, see the files in the `examples` directory alongside the
 links within them, or [read the docs](http://pyfpm.readthedocs.org/).
+
+## Installation
+
+`pyfpm` is in [PyPi](http://pypi.python.org/pypi/pyfpm):
+
+```bash
+$ pip install pyfpm
+```
