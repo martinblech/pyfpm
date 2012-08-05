@@ -34,7 +34,13 @@ class _IfCondition(object):
 
 def Parser(context=None):
     """
-    Create a parser. Warning: creating a parser is expensive!
+    Create a parser.
+
+    :param context: optional context, defaults to the caller's
+        `globals()`
+    :type context: dict
+
+    .. warning:: creating a parser is expensive!
 
     Usage and syntax examples:
 
@@ -113,9 +119,6 @@ def Parser(context=None):
         >>> parser('[_:int|[], 2, 3]') << ([], 2, 3)
         Match({})
         >>> parser('[_:int|[], 2, 3]') << ([1], 2, 3)
-
-    :param context: dict -- optional context, defaults to the caller's
-        `globals()`
 
     """
     if context is None:

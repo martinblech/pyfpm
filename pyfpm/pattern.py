@@ -49,11 +49,12 @@ class Pattern(object):
 
     def match(self, other, ctx=None):
         """
-        Match this pattern against an object.
+        Match this pattern against an object. Operator: `<<`.
 
         :param other: the object this pattern should be matched against.
-        :param ctx: dict -- optional context. If none, an empty one will be
+        :param ctx: optional context. If none, an empty one will be
             automatically created.
+        :type ctx: dict
         :returns: a :class:`Match` if successful, `None` otherwise.
 
         """
@@ -74,37 +75,35 @@ class Pattern(object):
                 return Match(ctx)
         return None
     def __lshift__(self, other):
-        """You can also use the `<<` operator instead of :method:`match`"""
         return self.match(other)
 
     def bind(self, name):
-        """Bind this pattern to the given name."""
+        """Bind this pattern to the given name. Operator: `%`."""
         self.bound_name = name
         return self
     def __mod__(self, name):
-        """You can also bind to a name using the `%` operator."""
         return self.bind(name)
 
     def if_(self, condition):
         """
-        Add a boolean condition to this pattern.
+        Add a boolean condition to this pattern. Operator: `/`.
 
-        :param condition: function -- must accept the match context as keyword
+        :param condition: must accept the match context as keyword
             arguments and return a boolean-ish value.
+        :type condition: callable
 
         """
         self.condition = condition
         return self
     def __div__(self, condition):
-        """You can also add a boolean condition using the '/' operator."""
         return self.if_(condition)
     def __truediv__(self, condition):
-        """You can also add a boolean condition using the '/' operator."""
         return self.if_(condition)
 
     def multiply(self, n):
         """
-        Build a ListPattern that matches `n` instances of this pattern.
+        Build a :class:`ListPattern` that matches `n` instances of this pattern.
+        Operator: `*`.
 
         Example:
 
@@ -115,15 +114,14 @@ class Pattern(object):
         """
         return build(*([self]*n))
     def __mul__(self, length):
-        """You can also multiply a pattern using the `*` operator."""
         return self.multiply(length)
     def __rmul__(self, length):
-        """You can also multiply a pattern using the `*` operator."""
         return self.multiply(length)
 
     def or_with(self, other):
         """
-        Build a new pattern that matches this or the other pattern.
+        Build a new :class:`OrPattern` with this or the other pattern.
+        Operator: `|`.
 
         Example:
 
@@ -143,13 +141,12 @@ class Pattern(object):
                 patterns.append(pattern)
         return OrPattern(*patterns)
     def __or__(self, other):
-        """You can also or-join two patterns using the `|` operator."""
         return self.or_with(other)
 
     def head_tail_with(self, other):
         """
         Head-tail concatenate this pattern with the other. The lhs pattern will
-        be the head and the other will be the tail.
+        be the head and the other will be the tail. Operator: `+`.
 
         Example:
 
@@ -161,7 +158,6 @@ class Pattern(object):
         """
         return ListPattern(self, other)
     def __add__(self, other):
-        """You can also head-tail concatenate using the `+` operator."""
         return self.head_tail_with(other)
 
     def __eq__(self, other):

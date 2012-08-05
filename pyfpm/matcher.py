@@ -77,17 +77,15 @@ class Matcher(object):
     """
     Maps patterns to handler functions.
 
+    :param bindings: an optional list of pattern-handler pairs.
+        String patterns are automatically parsed.
+    :type bindings: iterable
+    :param context: an optional context for the :class:`Parser`.
+        If absent, it uses the caller's `globals()`
+    :type context: dict
+
     """
     def __init__(self, bindings=[], context=None):
-        """
-        Initialize a new instance of Matcher.
-
-        :param bindings: iterable -- an optional list of pattern-handler pairs.
-            String patterns are automatically parsed.
-        :param context: dict -- an optional context for the :class:`Parser`.
-            If absent, it uses the caller's `globals()`
-
-        """
         self.bindings = []
         if context is None:
             context = _get_caller_globals()
@@ -111,9 +109,15 @@ class Matcher(object):
     def match(self, obj, *args):
         """
         Match the given object against the registerd patterns until the first
-        match. The corresponding handler gets called with :param:`args` as
-        positional arguments and the match context as keyword arguments, as in
-        this example:
+        match. The corresponding handler gets called with `args` as
+        positional arguments and the match context as keyword arguments.
+
+        :param obj: the object to match the patterns with
+        :param args: the extra positional arguments that the handler function
+            will get called with
+        :raises: NoMatch -- if none of the patterns can match de object
+
+        Example:
 
             >>> m = Matcher([
             ... ('head :: tail', lambda extra, head, tail: (extra, head, tail)),
@@ -124,11 +128,6 @@ class Matcher(object):
             >>> m.match((1, 2, 3), 'numbers')
             ('numbers', 1, (2, 3))
 
-        :param obj: the object to match the patterns with
-        :param args: the extra positional arguments that the handler function
-            will get called with
-        :raises: NoMatch -- if none of the patterns can match de object
-
         """
         for pattern, handler in self.bindings:
             match = pattern << obj
@@ -138,7 +137,7 @@ class Matcher(object):
 
     def __call__(self, obj, *args):
         """
-        Same as :method:`match`. Matcher instances can be called directly:
+        Same as :func:`match`. Matcher instances can be called directly:
 
             >>> m = Matcher([('_', lambda: 'yes')])
             >>> m(0) == m.match(0)
@@ -150,7 +149,7 @@ class Matcher(object):
     def handler(self, pattern):
         """
         Decorator for registering handlers. It's an alternate syntax with the
-        same effect as :method:`register`:
+        same effect as :func:`register`:
 
             >>> m = Matcher()
             >>> @m.handler('x:int')
@@ -182,17 +181,19 @@ class Matcher(object):
 
 def match_args(pattern, context=None):
     """
-    Decorator for matching a function's arglist. Usage:
+    Decorator for matching a function's arglist.
+
+    :param pattern: Pattern or str -- the pattern
+    :param context: dict -- an optional context for the pattern parser. If
+        absent, it defaults to the caller's `globals()`.
+
+    Usage:
 
         >>> @match_args('head::tail')
         ... def do_something(head, tail):
         ...     return (head, tail)
         >>> do_something(1, 2, 3, 4)
         (1, (2, 3, 4))
-
-    :param pattern: Pattern or str -- the pattern
-    :param context: dict -- an optional context for the pattern parser. If
-    absent, it defaults to the caller's `globals()`.
 
     """
     if isinstance(pattern, _basestring):
